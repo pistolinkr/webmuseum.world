@@ -17,6 +17,37 @@ export default function StoryView({ artworks }: StoryViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // 클라이언트에서만 실행
+    if (typeof window === 'undefined') return;
+    
+    // 스크롤바 숨기기 (html과 body 모두에 적용)
+    const html = document.documentElement;
+    const body = document.body;
+    
+    html.classList.add('hide-scrollbar');
+    body.classList.add('hide-scrollbar');
+    
+    // 인라인 스타일로 강제 적용 (Safari 대응)
+    html.style.overflowY = 'auto';
+    html.style.scrollbarWidth = 'none';
+    html.style.msOverflowStyle = 'none';
+    body.style.overflowY = 'auto';
+    body.style.scrollbarWidth = 'none';
+    body.style.msOverflowStyle = 'none';
+    
+    return () => {
+      html.classList.remove('hide-scrollbar');
+      body.classList.remove('hide-scrollbar');
+      html.style.overflowY = '';
+      html.style.scrollbarWidth = '';
+      html.style.msOverflowStyle = '';
+      body.style.overflowY = '';
+      body.style.scrollbarWidth = '';
+      body.style.msOverflowStyle = '';
+    };
+  }, []);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const sections = containerRef.current.querySelectorAll('.story-section');

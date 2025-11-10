@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 
 export default function Favicon() {
   useEffect(() => {
+    // 클라이언트에서만 실행
+    if (typeof window === 'undefined') return;
+    
     // Safari 감지
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 

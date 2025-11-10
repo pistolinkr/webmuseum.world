@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Favicon from '@/components/Favicon';
+import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 
 export const metadata: Metadata = {
   title: 'WebMuseum World',
@@ -20,7 +21,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Favicon />
-        {children}
+        <PageTransitionWrapper>{children}</PageTransitionWrapper>
       </body>
     </html>
   );

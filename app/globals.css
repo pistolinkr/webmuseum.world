@@ -58,3 +58,31 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0;
 }
 
+/* 스크롤바 숨기기 (Story 페이지 전용) */
+html.hide-scrollbar,
+body.hide-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+html.hide-scrollbar::-webkit-scrollbar,
+body.hide-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome, Safari, Opera */
+  background: transparent;
+}
+
+html.hide-scrollbar::-webkit-scrollbar-track,
+body.hide-scrollbar::-webkit-scrollbar-track {
+  display: none;
+  background: transparent;
+}
+
+html.hide-scrollbar::-webkit-scrollbar-thumb,
+body.hide-scrollbar::-webkit-scrollbar-thumb {
+  display: none;
+  background: transparent;
+}
+
