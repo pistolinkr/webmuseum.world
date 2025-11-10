@@ -29,21 +29,21 @@ export default function StoryView({ artworks }: StoryViewProps) {
     
     // 인라인 스타일로 강제 적용 (Safari 대응)
     html.style.overflowY = 'auto';
-    html.style.scrollbarWidth = 'none';
-    html.style.msOverflowStyle = 'none';
+    html.style.setProperty('scrollbar-width', 'none');
+    html.style.setProperty('-ms-overflow-style', 'none');
     body.style.overflowY = 'auto';
-    body.style.scrollbarWidth = 'none';
-    body.style.msOverflowStyle = 'none';
+    body.style.setProperty('scrollbar-width', 'none');
+    body.style.setProperty('-ms-overflow-style', 'none');
     
     return () => {
       html.classList.remove('hide-scrollbar');
       body.classList.remove('hide-scrollbar');
       html.style.overflowY = '';
-      html.style.scrollbarWidth = '';
-      html.style.msOverflowStyle = '';
+      html.style.removeProperty('scrollbar-width');
+      html.style.removeProperty('-ms-overflow-style');
       body.style.overflowY = '';
-      body.style.scrollbarWidth = '';
-      body.style.msOverflowStyle = '';
+      body.style.removeProperty('scrollbar-width');
+      body.style.removeProperty('-ms-overflow-style');
     };
   }, []);
 

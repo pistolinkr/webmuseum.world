@@ -4,7 +4,7 @@ import Favicon from '@/components/Favicon';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 
 export const metadata: Metadata = {
-  title: 'WebMuseum World',
+  title: 'Web Museum',
   description: 'Digital exhibition platform',
   icons: {
     icon: '/icon-dark.png', // Default to dark icon for light theme

@@ -4,7 +4,7 @@ import { mockExhibitions } from '@/data/mockExhibitions';
 export default function Home() {
   return (
     <main style={{ padding: '2rem', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      <h1 style={{ color: 'var(--text-primary)' }}>WebMuseum World</h1>
+      <h1 style={{ color: 'var(--text-primary)' }}>Web Museum</h1>
       <div style={{ marginTop: '2rem' }}>
         <h2 style={{ color: 'var(--text-primary)' }}>Exhibitions</h2>
         <ul style={{ listStyle: 'none', marginTop: '1rem' }}>

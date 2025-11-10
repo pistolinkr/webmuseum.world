@@ -39,14 +39,14 @@ export default function Header() {
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
         <Image
           src={isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
-          alt="WebMuseum World"
+          alt="Web Museum"
           width={24}
           height={24}
           style={{ objectFit: 'contain' }}
           priority
         />
         <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>
-          WebMuseum World
+          Web Museum
         </h1>
       </Link>
     </header>
