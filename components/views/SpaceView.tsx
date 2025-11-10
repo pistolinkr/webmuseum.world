@@ -62,16 +62,18 @@ function ExhibitionSpace({ artworks }: { artworks: Artwork[] }) {
 
 export default function SpaceView({ artworks }: SpaceViewProps) {
   useEffect(() => {
-    // Safari-safe Canvas cleanup
+    // Safari-safe Canvas cleanup: defer unmount cleanup using requestAnimationFrame
     return () => {
-      const canvas = document.querySelector('canvas');
-      if (canvas && canvas.parentNode) {
-        try {
-          canvas.parentNode.removeChild(canvas);
-        } catch (e) {
-          // Safari 호환성: cleanup 실패 시 무시
+      requestAnimationFrame(() => {
+        const canvas = document.querySelector('canvas');
+        if (canvas && canvas.parentNode) {
+          try {
+            canvas.parentNode.removeChild(canvas);
+          } catch (e) {
+            // Safari 호환성: cleanup 실패 시 무시
+          }
         }
-      }
+      });
     };
   }, []);
 

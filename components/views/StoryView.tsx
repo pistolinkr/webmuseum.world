@@ -79,18 +79,20 @@ export default function StoryView({ artworks }: StoryViewProps) {
     }, containerRef); // containerRef를 scope로 지정
 
     return () => {
-      // Safari-safe cleanup: ScrollTrigger를 먼저 kill한 후 context revert
-      try {
-        ScrollTrigger.getAll().forEach((t) => t.kill());
-      } catch (e) {
-        // Safari 호환성: cleanup 실패 시 무시
-      }
-      
-      try {
-        ctx.revert();
-      } catch (e) {
-        // Safari 호환성: cleanup 실패 시 무시
-      }
+      // Safari-safe cleanup: defer unmount cleanup using requestAnimationFrame
+      requestAnimationFrame(() => {
+        try {
+          ScrollTrigger.getAll().forEach((t) => t.kill());
+        } catch (e) {
+          // Safari 호환성: cleanup 실패 시 무시
+        }
+        
+        try {
+          ctx.revert();
+        } catch (e) {
+          // Safari 호환성: cleanup 실패 시 무시
+        }
+      });
     };
   }, [artworks]);
 
