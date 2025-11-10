@@ -81,28 +81,15 @@ export default function StoryView({ artworks }: StoryViewProps) {
     return () => {
       // Safari-safe cleanup: ScrollTrigger를 먼저 kill한 후 context revert
       try {
-        if (typeof window !== 'undefined') {
-          // 컨테이너에 속한 ScrollTrigger만 kill
-          ScrollTrigger.getAll().forEach((trigger) => {
-            try {
-              const triggerElement = trigger.trigger || trigger.vars?.trigger;
-              if (triggerElement && containerRef.current?.contains(triggerElement as Node)) {
-                trigger.kill();
-              }
-            } catch (e) {
-              // 개별 trigger 정리 실패 시 무시 (Safari 호환성)
-            }
-          });
-        }
-      } catch (error) {
-        // ScrollTrigger 정리 실패 시 무시
+        ScrollTrigger.getAll().forEach((t) => t.kill());
+      } catch (e) {
+        // Safari 호환성: cleanup 실패 시 무시
       }
       
-      // Context를 revert하여 모든 애니메이션과 ScrollTrigger를 안전하게 정리
       try {
         ctx.revert();
-      } catch (error) {
-        // 이미 정리된 경우 에러 무시 (Safari 호환성)
+      } catch (e) {
+        // Safari 호환성: cleanup 실패 시 무시
       }
     };
   }, [artworks]);
