@@ -63,7 +63,12 @@ function ExhibitionSpace({ artworks }: { artworks: Artwork[] }) {
 export default function SpaceView({ artworks }: SpaceViewProps) {
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
-      <Canvas>
+      <Canvas
+        frameloop="demand"
+        onCreated={({ gl }) => {
+          gl.setClearColor('#000000');
+        }}
+      >
         <Suspense fallback={null}>
           <ExhibitionSpace artworks={artworks} />
         </Suspense>

@@ -50,31 +50,37 @@ export default function StoryView({ artworks }: StoryViewProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const sections = containerRef.current.querySelectorAll('.story-section');
-    
-    sections.forEach((section, index) => {
-      gsap.fromTo(
-        section,
-        {
-          opacity: 0,
-          y: 50,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            end: 'top 20%',
-            toggleActions: 'play none none reverse',
+    // GSAP Context를 사용하여 안전한 cleanup
+    const ctx = gsap.context(() => {
+      const sections = containerRef.current?.querySelectorAll('.story-section');
+      
+      if (!sections) return;
+      
+      sections.forEach((section, index) => {
+        gsap.fromTo(
+          section,
+          {
+            opacity: 0,
+            y: 50,
           },
-        }
-      );
-    });
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 80%',
+              end: 'top 20%',
+              toggleActions: 'play none none reverse',
+            },
+          }
+        );
+      });
+    }, containerRef); // containerRef를 scope로 지정
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+      // Context를 revert하면 모든 애니메이션과 ScrollTrigger가 안전하게 정리됨
+      ctx.revert();
     };
   }, [artworks]);
 
