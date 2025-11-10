@@ -1,17 +1,22 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
+
+// 전역 플래그로 한 번만 초기화되도록 보장 (페이지 전환 시에도 유지)
+declare global {
+  interface Window {
+    __faviconInitialized?: boolean;
+  }
+}
 
 export default function Favicon() {
-  const initializedRef = useRef(false);
-
   useEffect(() => {
     // 클라이언트에서만 실행
     if (typeof window === 'undefined') return;
     
     // 이미 초기화되었으면 실행하지 않음 (페이지 전환 시 재실행 방지)
-    if (initializedRef.current) return;
-    initializedRef.current = true;
+    if (window.__faviconInitialized) return;
+    window.__faviconInitialized = true;
     
     // Safari 감지
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);

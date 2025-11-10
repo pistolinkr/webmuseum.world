@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Artwork } from '@/types';
@@ -61,10 +61,40 @@ function ExhibitionSpace({ artworks }: { artworks: Artwork[] }) {
 }
 
 export default function SpaceView({ artworks }: SpaceViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Safari-safe Canvas cleanup
+    return () => {
+      if (typeof window === 'undefined') return;
+      
+      try {
+        const canvas = containerRef.current?.querySelector('canvas');
+        if (canvas && canvas.parentNode) {
+          // Safari는 이미 detach된 DOM에 removeChild를 호출하면 에러 발생
+          // try-catch로 안전하게 처리
+          try {
+            canvas.parentNode.removeChild(canvas);
+          } catch (e) {
+            // Safari safe-fail fallback
+            // Canvas가 이미 제거되었거나 parentNode가 없는 경우 무시
+          }
+        }
+      } catch (error) {
+        // Cleanup 실패 시 무시 (Safari 호환성)
+        console.warn('Canvas cleanup warning:', error);
+      }
+    };
+  }, []);
+
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
+    <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
       <Canvas
-        frameloop="demand"
+        frameloop="always"
+        gl={{ 
+          antialias: true,
+          preserveDrawingBuffer: true 
+        }}
         onCreated={({ gl }) => {
           gl.setClearColor('#000000');
         }}
