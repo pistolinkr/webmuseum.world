@@ -1,0 +1,102 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { Artwork } from '@/types';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+interface StoryViewProps {
+  artworks: Artwork[];
+}
+
+export default function StoryView({ artworks }: StoryViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const sections = containerRef.current.querySelectorAll('.story-section');
+    
+    sections.forEach((section, index) => {
+      gsap.fromTo(
+        section,
+        {
+          opacity: 0,
+          y: 50,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            end: 'top 20%',
+            toggleActions: 'play none none reverse',
+          },
+        }
+      );
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
+  }, [artworks]);
+
+  return (
+    <div ref={containerRef} style={{ paddingTop: '4rem', paddingBottom: '8rem' }}>
+      {artworks.map((artwork, index) => (
+        <section
+          key={artwork.id}
+          className="story-section"
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '4rem 2rem',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '800px',
+              width: '100%',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                aspectRatio: '16/9',
+                backgroundColor: '#f5f5f5',
+                marginBottom: '2rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <span style={{ color: '#999' }}>Image: {artwork.title}</span>
+            </div>
+            <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontWeight: 300 }}>
+              {artwork.title}
+            </h2>
+            <p style={{ fontSize: '1.125rem', marginBottom: '1rem', color: '#666' }}>
+              {artwork.caption}
+            </p>
+            <p style={{ fontSize: '1rem', lineHeight: '1.6', color: '#888' }}>
+              {artwork.description}
+            </p>
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#999' }}>
+              {artwork.artist} {artwork.year && `• ${artwork.year}`}
+            </p>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
