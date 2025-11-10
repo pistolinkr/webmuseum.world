@@ -31,17 +31,21 @@ export default function Header() {
         display: 'flex',
         alignItems: 'center',
         gap: '0.75rem',
+        borderBottom: 'none',
+        boxShadow: 'none',
+        margin: 0,
       }}
     >
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
         <Image
-          src={isDarkMode ? '/icon-dark.png' : '/icon.png'}
+          src={isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
           alt="WebMuseum World"
           width={24}
           height={24}
           style={{ objectFit: 'contain' }}
+          priority
         />
-        <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--text-primary)' }}>
+        <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>
           WebMuseum World
         </h1>
       </Link>

@@ -24,10 +24,10 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
       title: `${artwork.title} - ${artwork.artist}`,
     }));
 
-    const options: PhotoSwipe.Options = {
+    const options = {
       dataSource: items,
       index: index,
-      showHideAnimationType: 'fade',
+      showHideAnimationType: 'fade' as const,
       bgOpacity: 0.95,
       spacing: 0.1,
       allowPanToNext: true,
@@ -38,12 +38,15 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
       hideAnimationDuration: 300,
     };
 
+    // Destroy existing instance if any
     if (pswpRef.current) {
-      pswpRef.current.loadAndOpen(index, options);
-    } else {
-      pswpRef.current = new PhotoSwipe(options);
-      pswpRef.current.init();
+      pswpRef.current.destroy();
+      pswpRef.current = null;
     }
+
+    // Create new PhotoSwipe instance
+    pswpRef.current = new PhotoSwipe(options);
+    pswpRef.current.init();
   };
 
   useEffect(() => {

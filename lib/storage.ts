@@ -48,9 +48,16 @@ export async function getUploadUrl(
   const config = getStorageConfig();
   if (!config) return null;
 
-  // In production, this should be done server-side
-  // For now, return a placeholder
-  return `/api/storage/upload?key=${encodeURIComponent(key)}&type=${encodeURIComponent(contentType)}`;
+  // Call server-side API route
+  try {
+    const response = await fetch(`/api/storage?action=upload&key=${encodeURIComponent(key)}&type=${encodeURIComponent(contentType)}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.url || null;
+  } catch (error) {
+    console.error('Error getting upload URL:', error);
+    return null;
+  }
 }
 
 // Generate public URL for media
@@ -63,7 +70,13 @@ export function getMediaUrl(key: string): string {
     const accountId = process.env.NEXT_PUBLIC_R2_ACCOUNT_ID || '';
     return `https://${accountId}.r2.cloudflarestorage.com/${config.bucket}/${key}`;
   } else {
-    // AWS S3 public URL format
+    // AWS S3 with CloudFront CDN
+    const cloudfrontUrl = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+    if (cloudfrontUrl) {
+      // Use CloudFront CDN URL if configured
+      return `${cloudfrontUrl}/${key}`;
+    }
+    // Fallback to S3 direct URL
     const region = config.region || 'us-east-1';
     return `https://${config.bucket}.s3.${region}.amazonaws.com/${key}`;
   }
@@ -116,7 +129,7 @@ export async function uploadFile(
 // Delete file (requires backend API)
 export async function deleteFile(key: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/storage/delete?key=${encodeURIComponent(key)}`, {
+    const response = await fetch(`/api/storage?key=${encodeURIComponent(key)}`, {
       method: 'DELETE',
     });
     return response.ok;

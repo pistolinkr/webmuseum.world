@@ -26,15 +26,23 @@ STORAGE_ACCESS_KEY_ID=your_access_key_id
 STORAGE_SECRET_ACCESS_KEY=your_secret_access_key
 ```
 
-### Option 2: AWS S3
+### Option 2: AWS S3 + CloudFront CDN
 
 ```bash
 NEXT_PUBLIC_STORAGE_PROVIDER=s3
 NEXT_PUBLIC_AWS_REGION=us-east-1
 NEXT_PUBLIC_STORAGE_BUCKET=your_bucket_name
+NEXT_PUBLIC_CLOUDFRONT_URL=https://your-cloudfront-distribution-id.cloudfront.net
 STORAGE_ACCESS_KEY_ID=your_access_key_id
 STORAGE_SECRET_ACCESS_KEY=your_secret_access_key
 ```
+
+**Setup Steps:**
+1. Create S3 bucket in AWS Console
+2. Create CloudFront distribution with S3 bucket as origin
+3. Set CloudFront distribution URL in `NEXT_PUBLIC_CLOUDFRONT_URL`
+4. Configure S3 bucket CORS and bucket policy for public read access
+5. Set up IAM user with S3 upload permissions for `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY`
 
 **Note:** Keep `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY` secure. These should only be used server-side in API routes.
 

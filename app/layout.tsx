@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: 'WebMuseum World',
   description: 'Digital exhibition platform',
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
+    icon: '/icon-dark.png', // Default to dark icon for light theme
+    apple: '/icon-dark.png',
   },
 };
 
