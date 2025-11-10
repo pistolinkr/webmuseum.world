@@ -14,11 +14,19 @@ export default function ExhibitionLayoutClient({
 }) {
   const pathname = usePathname();
   
+  // Extract the last segment of the pathname to determine the mode
+  // Path format: /exhibition/[id]/[mode]
   let currentMode: ViewMode = 'story';
-  if (pathname?.includes('/gallery')) {
-    currentMode = 'gallery';
-  } else if (pathname?.includes('/space')) {
-    currentMode = 'space';
+  if (pathname) {
+    const segments = pathname.split('/').filter(Boolean);
+    const lastSegment = segments[segments.length - 1];
+    
+    if (lastSegment === 'gallery') {
+      currentMode = 'gallery';
+    } else if (lastSegment === 'space') {
+      currentMode = 'space';
+    }
+    // Default to 'story' if lastSegment is 'story' or anything else
   }
 
   return (
