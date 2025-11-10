@@ -48,13 +48,13 @@ export default function StoryView({ artworks }: StoryViewProps) {
   }, []);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || typeof window === 'undefined') return;
 
     // GSAP Context를 사용하여 안전한 cleanup
     const ctx = gsap.context(() => {
       const sections = containerRef.current?.querySelectorAll('.story-section');
       
-      if (!sections) return;
+      if (!sections || sections.length === 0) return;
       
       sections.forEach((section, index) => {
         gsap.fromTo(
@@ -79,8 +79,33 @@ export default function StoryView({ artworks }: StoryViewProps) {
     }, containerRef); // containerRef를 scope로 지정
 
     return () => {
-      // Context를 revert하면 모든 애니메이션과 ScrollTrigger가 안전하게 정리됨
-      ctx.revert();
+      // Context를 먼저 revert하여 모든 애니메이션과 ScrollTrigger를 안전하게 정리
+      try {
+        ctx.revert();
+      } catch (error) {
+        // 이미 정리된 경우 에러 무시
+        console.warn('GSAP context cleanup warning:', error);
+      }
+      
+      // 추가 안전장치: 컨테이너에 속한 ScrollTrigger만 명시적으로 정리
+      if (typeof window !== 'undefined' && containerRef.current) {
+        try {
+          const triggers = ScrollTrigger.getAll();
+          triggers.forEach((trigger) => {
+            try {
+              const triggerElement = trigger.trigger || trigger.vars?.trigger;
+              if (triggerElement && containerRef.current?.contains(triggerElement as Node)) {
+                trigger.kill();
+              }
+            } catch (e) {
+              // 개별 trigger 정리 실패 시 무시
+            }
+          });
+        } catch (error) {
+          // ScrollTrigger 정리 실패 시 무시
+          console.warn('ScrollTrigger cleanup warning:', error);
+        }
+      }
     };
   }, [artworks]);
 
