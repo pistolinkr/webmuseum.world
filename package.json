@@ -16,7 +16,10 @@
     "photoswipe": "^5.4.0",
     "three": "^0.160.0",
     "@react-three/fiber": "^8.15.0",
-    "@react-three/drei": "^9.88.0"
+    "@react-three/drei": "^9.88.0",
+    "firebase": "^10.7.0",
+    "@aws-sdk/client-s3": "^3.490.0",
+    "@aws-sdk/s3-request-presigner": "^3.490.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

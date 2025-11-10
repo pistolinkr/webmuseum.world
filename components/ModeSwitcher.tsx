@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { ViewMode } from '@/types';
 
 interface ModeSwitcherProps {
@@ -11,19 +10,6 @@ interface ModeSwitcherProps {
 
 export default function ModeSwitcher({ exhibitionId, currentMode }: ModeSwitcherProps) {
   const router = useRouter();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Check initial dark mode preference
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches);
-
-    // Listen for changes
-    const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
 
   const modes: { label: string; mode: ViewMode; path: string }[] = [
     { label: 'View through story', mode: 'story', path: `/exhibition/${exhibitionId}/story` },
@@ -35,8 +21,8 @@ export default function ModeSwitcher({ exhibitionId, currentMode }: ModeSwitcher
     router.push(path);
   };
 
-  // 색상 설정: 화이트 모드 = 어두운 회색, 다크 모드 = 밝은 회색
-  const inactiveColor = isDarkMode ? '#999' : '#666';
+  // 색상 설정: CSS 변수 사용
+  const inactiveColor = 'var(--text-secondary)';
 
   return (
     <nav
@@ -50,6 +36,7 @@ export default function ModeSwitcher({ exhibitionId, currentMode }: ModeSwitcher
         padding: '1.5rem',
         zIndex: 1000,
         gap: '1rem',
+        backgroundColor: 'var(--bg-primary)',
       }}
     >
       {modes.map(({ label, mode, path }) => (
@@ -59,8 +46,8 @@ export default function ModeSwitcher({ exhibitionId, currentMode }: ModeSwitcher
           style={{
             padding: '0.75rem 1.5rem',
             border: 'none',
-            background: currentMode === mode ? '#000' : 'transparent',
-            color: currentMode === mode ? '#fff' : inactiveColor,
+            background: currentMode === mode ? 'var(--text-primary)' : 'transparent',
+            color: currentMode === mode ? 'var(--bg-primary)' : inactiveColor,
             cursor: 'pointer',
             fontSize: '0.875rem',
             transition: 'all 0.3s ease',

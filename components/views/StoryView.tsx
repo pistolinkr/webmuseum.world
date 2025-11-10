@@ -72,25 +72,25 @@ export default function StoryView({ artworks }: StoryViewProps) {
               style={{
                 width: '100%',
                 aspectRatio: '16/9',
-                backgroundColor: '#f5f5f5',
+                backgroundColor: 'var(--bg-secondary)',
                 marginBottom: '2rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <span style={{ color: '#999' }}>Image: {artwork.title}</span>
+              <span style={{ color: 'var(--text-tertiary)' }}>Image: {artwork.title}</span>
             </div>
-            <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontWeight: 300 }}>
+            <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontWeight: 300, color: 'var(--text-primary)' }}>
               {artwork.title}
             </h2>
-            <p style={{ fontSize: '1.125rem', marginBottom: '1rem', color: '#666' }}>
+            <p style={{ fontSize: '1.125rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>
               {artwork.caption}
             </p>
-            <p style={{ fontSize: '1rem', lineHeight: '1.6', color: '#888' }}>
+            <p style={{ fontSize: '1rem', lineHeight: '1.6', color: 'var(--text-tertiary)' }}>
               {artwork.description}
             </p>
-            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#999' }}>
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
               {artwork.artist} {artwork.year && `• ${artwork.year}`}
             </p>
           </div>

@@ -10,10 +10,12 @@ export default function Header() {
         right: 0,
         padding: '1rem 2rem',
         zIndex: 1000,
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
       }}
     >
       <Link href="/">
-        <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em' }}>
+        <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--text-primary)' }}>
           WebMuseum World
         </h1>
       </Link>
