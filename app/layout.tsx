@@ -1,9 +1,14 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import Favicon from '@/components/Favicon';
 
 export const metadata: Metadata = {
   title: 'WebMuseum World',
   description: 'Digital exhibition platform',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -13,7 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Favicon />
+        {children}
+      </body>
     </html>
   );
 }
