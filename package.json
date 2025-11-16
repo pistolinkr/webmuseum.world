@@ -15,6 +15,7 @@
     "@react-three/fiber": "^8.15.0",
     "botid": "^1.5.10",
     "firebase": "^12.5.0",
+    "framer-motion": "^12.23.24",
     "gsap": "^3.12.2",
     "next": "^14.0.0",
     "photoswipe": "^5.4.0",

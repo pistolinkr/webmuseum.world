@@ -1,15 +1,15 @@
-import { getExhibitionById } from '@/data/mockExhibitions';
+import { getExhibition } from '@/lib/firestore';
 import { notFound } from 'next/navigation';
 import ExhibitionLayoutClient from '@/components/ExhibitionLayoutClient';
 
-export default function ExhibitionLayout({
+export default async function ExhibitionLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
   params: { id: string };
 }) {
-  const exhibition = getExhibitionById(params.id);
+  const exhibition = await getExhibition(params.id);
 
   if (!exhibition) {
     notFound();

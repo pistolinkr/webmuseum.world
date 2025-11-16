@@ -1,20 +1,90 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import Link from 'next/link';
 import { Artwork } from '@/types';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
 
 interface GalleryViewProps {
   artworks: Artwork[];
+  exhibitionId: string;
 }
 
-export default function GalleryView({ artworks }: GalleryViewProps) {
+export default function GalleryView({ artworks, exhibitionId }: GalleryViewProps) {
   const pswpRef = useRef<PhotoSwipe | null>(null);
   const pswpElementRef = useRef<HTMLDivElement>(null);
+  const isDestroyingRef = useRef(false);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
-  const openPhotoSwipe = (index: number) => {
-    if (!pswpElementRef.current) return;
+  // Detect Safari browser
+  const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  // Safely destroy PhotoSwipe instance
+  const destroyPhotoSwipe = useCallback(() => {
+    if (!pswpRef.current || isDestroyingRef.current) return;
+    
+    isDestroyingRef.current = true;
+    const instance = pswpRef.current;
+    pswpRef.current = null;
+
+    // Safari requires more careful DOM manipulation
+    const destroyDelay = isSafari ? 500 : 350;
+    const cleanupDelay = isSafari ? 100 : 50;
+
+    try {
+      // Check if instance has a UI element and if it's in the DOM
+      const uiElement = instance.ui?.element;
+      const isInDOM = uiElement && uiElement.parentNode && document.body.contains(uiElement);
+      
+      if (isInDOM) {
+        // Close if open
+        try {
+          // Check opened state safely
+          const isOpened = instance.opened || (instance as any).isOpen || false;
+          if (isOpened) {
+            instance.close();
+            // Wait for close animation (longer delay for Safari)
+            setTimeout(() => {
+              try {
+                // Double-check DOM before destroying
+                if (instance.ui?.element?.parentNode && document.body.contains(instance.ui.element)) {
+                  instance.destroy();
+                } else {
+                  // DOM already removed, just clear reference
+                }
+              } catch (e) {
+                // Ignore destroy errors - DOM may already be removed
+              }
+              isDestroyingRef.current = false;
+            }, destroyDelay);
+            return;
+          }
+        } catch (e) {
+          // Ignore close errors
+        }
+      }
+      
+      // Not open or no UI element, destroy immediately (with Safari delay)
+      setTimeout(() => {
+        try {
+          // Final check before destroy
+          if (instance.ui?.element?.parentNode && document.body.contains(instance.ui.element)) {
+            instance.destroy();
+          }
+        } catch (e) {
+          // Ignore destroy errors - DOM may already be removed
+        }
+        isDestroyingRef.current = false;
+      }, cleanupDelay);
+    } catch (e) {
+      // If any error occurs, just mark as not destroying
+      isDestroyingRef.current = false;
+    }
+  }, [isSafari]);
+
+  const openPhotoSwipe = useCallback((index: number) => {
+    if (!pswpElementRef.current || isDestroyingRef.current) return;
 
     const items = artworks.map((artwork) => ({
       src: artwork.imageUrl,
@@ -22,7 +92,25 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
       height: 1080,
       alt: artwork.title,
       title: `${artwork.title} - ${artwork.artist}`,
+      // Add link to artwork detail page
+      link: `/exhibition/${exhibitionId}/artwork/${artwork.id}`,
     }));
+
+    // Destroy existing instance synchronously before creating new one
+    if (pswpRef.current) {
+      destroyPhotoSwipe();
+      // Wait longer for Safari to ensure cleanup completes
+      const waitTime = isSafari ? 150 : 50;
+      setTimeout(() => {
+        createAndOpenPhotoSwipe(items, index);
+      }, waitTime);
+    } else {
+      createAndOpenPhotoSwipe(items, index);
+    }
+  }, [artworks, destroyPhotoSwipe, isSafari]);
+
+  const createAndOpenPhotoSwipe = useCallback((items: any[], index: number) => {
+    if (!pswpElementRef.current || isDestroyingRef.current) return;
 
     const options = {
       dataSource: items,
@@ -38,25 +126,36 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
       hideAnimationDuration: 300,
     };
 
-    // Destroy existing instance if any
-    if (pswpRef.current) {
-      pswpRef.current.destroy();
+    try {
+      // Create new PhotoSwipe instance
+      pswpRef.current = new PhotoSwipe(options);
+      pswpRef.current.init();
+    } catch (e) {
+      console.error('Error creating PhotoSwipe instance:', e);
       pswpRef.current = null;
     }
-
-    // Create new PhotoSwipe instance
-    pswpRef.current = new PhotoSwipe(options);
-    pswpRef.current.init();
-  };
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (pswpRef.current) {
-        pswpRef.current.destroy();
-        pswpRef.current = null;
+      // Safari-safe cleanup: use multiple requestAnimationFrame delays for Safari
+      if (isSafari) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              destroyPhotoSwipe();
+            });
+          });
+        });
+      } else {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            destroyPhotoSwipe();
+          });
+        });
       }
     };
-  }, []);
+  }, [destroyPhotoSwipe, isSafari]);
 
   return (
     <>
@@ -71,12 +170,15 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
           }}
         >
           {artworks.map((artwork, index) => (
-            <div
+            <Link
               key={artwork.id}
-              onClick={() => openPhotoSwipe(index)}
+              href={`/exhibition/${exhibitionId}/artwork/${artwork.id}`}
+              prefetch={true}
               style={{
                 cursor: 'pointer',
                 transition: 'transform 0.3s ease',
+                textDecoration: 'none',
+                color: 'inherit',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.02)';
@@ -88,7 +190,6 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
               <div
                 style={{
                   width: '100%',
-                  aspectRatio: '4/3',
                   backgroundColor: 'var(--bg-secondary)',
                   marginBottom: '1rem',
                   display: 'flex',
@@ -96,9 +197,42 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
                   justifyContent: 'center',
                   position: 'relative',
                   overflow: 'hidden',
+                  borderRadius: 'var(--radius-lg)',
                 }}
               >
-                <span style={{ color: 'var(--text-tertiary)' }}>Image: {artwork.title}</span>
+                {artwork.imageUrl && !imageErrors.has(artwork.id) ? (
+                  <img
+                    src={artwork.imageUrl}
+                    alt={artwork.title}
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: '600px',
+                      objectFit: 'contain',
+                      display: 'block',
+                    }}
+                    loading="lazy"
+                    onError={() => {
+                      setImageErrors(prev => new Set(prev).add(artwork.id));
+                    }}
+                  />
+                ) : (
+                  <div style={{ 
+                    width: '100%',
+                    minHeight: '300px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4rem',
+                    color: 'var(--text-tertiary)',
+                    textAlign: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }}>🖼️</div>
+                      <div>{artwork.title}</div>
+                    </div>
+                  </div>
+                )}
               </div>
               <h3 style={{ fontSize: '1.125rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                 {artwork.title}
@@ -106,7 +240,7 @@ export default function GalleryView({ artworks }: GalleryViewProps) {
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 {artwork.artist}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Artwork } from '@/types';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -11,10 +12,12 @@ if (typeof window !== 'undefined') {
 
 interface StoryViewProps {
   artworks: Artwork[];
+  exhibitionId: string;
 }
 
-export default function StoryView({ artworks }: StoryViewProps) {
+export default function StoryView({ artworks, exhibitionId }: StoryViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // 클라이언트에서만 실행
@@ -120,15 +123,53 @@ export default function StoryView({ artworks }: StoryViewProps) {
             <div
               style={{
                 width: '100%',
-                aspectRatio: '16/9',
                 backgroundColor: 'var(--bg-secondary)',
                 marginBottom: '2rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                overflow: 'hidden',
+                borderRadius: 'var(--radius-lg)',
+                position: 'relative',
+                minHeight: '400px',
+                maxHeight: '80vh',
               }}
             >
-              <span style={{ color: 'var(--text-tertiary)' }}>Image: {artwork.title}</span>
+              {artwork.imageUrl && !imageErrors.has(artwork.id) ? (
+                <img
+                  src={artwork.imageUrl}
+                  alt={artwork.title}
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '80vh',
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                  loading="lazy"
+                  onError={() => {
+                    setImageErrors(prev => new Set(prev).add(artwork.id));
+                  }}
+                />
+              ) : (
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%',
+                  minHeight: '400px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-tertiary)',
+                  fontSize: '1.125rem',
+                  padding: '2rem',
+                  textAlign: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>🖼️</div>
+                    <div>{artwork.title}</div>
+                  </div>
+                </div>
+              )}
             </div>
             <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontWeight: 300, color: 'var(--text-primary)' }}>
               {artwork.title}
@@ -142,6 +183,14 @@ export default function StoryView({ artworks }: StoryViewProps) {
             <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
               {artwork.artist} {artwork.year && `• ${artwork.year}`}
             </p>
+            <div style={{ marginTop: '2rem' }}>
+              <Link
+                href={`/exhibition/${exhibitionId}/artwork/${artwork.id}`}
+                className="story-view-cta"
+              >
+                View Details
+              </Link>
+            </div>
           </div>
         </section>
       ))}

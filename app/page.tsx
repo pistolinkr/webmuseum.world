@@ -1,23 +1,19 @@
-import Link from 'next/link';
-import { mockExhibitions } from '@/data/mockExhibitions';
+import LandingHero from '@/components/landing/LandingHero';
+import VisualAccent from '@/components/landing/VisualAccent';
+import LandingFeatures from '@/components/landing/LandingFeatures';
+import FeaturedExhibitions from '@/components/home/FeaturedExhibitions';
+import FeaturedArtists from '@/components/home/FeaturedArtists';
+import LandingFooter from '@/components/landing/LandingFooter';
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <main style={{ padding: '2rem', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      <h1 style={{ color: 'var(--text-primary)' }}>Web Museum</h1>
-      <div style={{ marginTop: '2rem' }}>
-        <h2 style={{ color: 'var(--text-primary)' }}>Exhibitions</h2>
-        <ul style={{ listStyle: 'none', marginTop: '1rem' }}>
-          {mockExhibitions.map((exhibition) => (
-            <li key={exhibition.id} style={{ marginBottom: '1rem' }}>
-              <Link href={`/exhibition/${exhibition.id}/story`} style={{ color: 'var(--text-primary)' }}>
-                {exhibition.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </main>
+    <>
+      <LandingHero />
+      <VisualAccent />
+      <FeaturedExhibitions />
+      <FeaturedArtists />
+      <LandingFeatures />
+      <LandingFooter />
+    </>
   );
 }
-

@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns a document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read any public user profile
+      allow read: if true;
+      
+      // Users can only create/update their own profile
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Exhibitions collection
+    match /exhibitions/{exhibitionId} {
+      // Anyone can read public exhibitions
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.userId);
+      
+      // Only authenticated users can create exhibitions
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Only the owner can update their exhibition
+      allow update: if isOwner(resource.data.userId) && 
+                       request.resource.data.userId == resource.data.userId;
+      
+      // Only the owner can delete their exhibition
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // Artworks collection
+    match /artworks/{artworkId} {
+      // Anyone can read artworks from public exhibitions
+      // For now, allow read if the artwork belongs to a public exhibition
+      // Note: This is a simplified check. In production, you might want to verify
+      // the exhibition's isPublic status by checking the exhibitions collection
+      allow read: if true;
+      
+      // Only authenticated users can create artworks
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Only the owner can update their artwork
+      allow update: if isOwner(resource.data.userId) && 
+                       request.resource.data.userId == resource.data.userId;
+      
+      // Only the owner can delete their artwork
+      allow delete: if isOwner(resource.data.userId);
+    }
+  }
+}
+

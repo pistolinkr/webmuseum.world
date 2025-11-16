@@ -1,7 +1,7 @@
 // Firebase configuration
 // Load from environment variables
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth } from 'firebase/auth';
 
@@ -14,21 +14,92 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-let app: FirebaseApp;
-let db: Firestore;
-let storage: FirebaseStorage;
-let auth: Auth;
+// Validate Firebase config
+const isFirebaseConfigured = 
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.storageBucket &&
+  firebaseConfig.messagingSenderId &&
+  firebaseConfig.appId;
 
-if (typeof window !== 'undefined') {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0];
+// Initialize Firebase
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let storage: FirebaseStorage | undefined;
+let auth: Auth | undefined;
+
+if (isFirebaseConfigured) {
+  try {
+    if (typeof window !== 'undefined') {
+      // Client-side initialization
+      if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+        console.log('✅ Firebase: Initialized on client-side');
+        console.log('📋 Firebase Config:', {
+          projectId: firebaseConfig.projectId,
+          authDomain: firebaseConfig.authDomain,
+          apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : 'missing'
+        });
+      } else {
+        app = getApps()[0];
+        console.log('✅ Firebase: Using existing app instance');
+      }
+      db = getFirestore(app);
+      storage = getStorage(app);
+      auth = getAuth(app);
+      
+      // Enable offline persistence for Firestore (client-side only)
+      enableIndexedDbPersistence(db)
+        .then(() => {
+          console.log('✅ Firebase: Offline persistence enabled');
+        })
+        .catch((err) => {
+          if (err.code === 'failed-precondition') {
+            // Multiple tabs open, persistence can only be enabled in one tab at a time
+            console.warn('⚠️ Firebase: Offline persistence already enabled in another tab');
+          } else if (err.code === 'unimplemented') {
+            // Browser doesn't support persistence
+            console.warn('⚠️ Firebase: Browser does not support offline persistence');
+          } else {
+            console.warn('⚠️ Firebase: Failed to enable offline persistence:', err);
+          }
+        });
+    } else {
+      // Server-side initialization
+      if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+        console.log('✅ Firebase: Initialized on server-side');
+        console.log('📋 Firebase Config:', {
+          projectId: firebaseConfig.projectId,
+          authDomain: firebaseConfig.authDomain
+        });
+      } else {
+        app = getApps()[0];
+        console.log('✅ Firebase: Using existing app instance (server)');
+      }
+      db = getFirestore(app);
+      // Storage and Auth are client-side only
+    }
+  } catch (error: any) {
+    console.error('❌ Firebase: Initialization error:', error);
+    console.error('❌ Firebase: Error details:', {
+      code: error?.code,
+      message: error?.message,
+      stack: error?.stack
+    });
   }
-  db = getFirestore(app);
-  storage = getStorage(app);
-  auth = getAuth(app);
+} else {
+  console.warn('⚠️ Firebase: Configuration is incomplete. Please check your .env.local file.');
+  console.warn('⚠️ Missing config:', {
+    apiKey: !firebaseConfig.apiKey,
+    authDomain: !firebaseConfig.authDomain,
+    projectId: !firebaseConfig.projectId,
+    storageBucket: !firebaseConfig.storageBucket,
+    messagingSenderId: !firebaseConfig.messagingSenderId,
+    appId: !firebaseConfig.appId
+  });
+  console.warn('⚠️ Firebase: Falling back to mock data');
 }
 
 export { app, db, storage, auth };

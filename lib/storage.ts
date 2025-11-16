@@ -151,3 +151,9 @@ export function generateExhibitionThumbnailKey(exhibitionId: string, extension: 
   return `exhibitions/${exhibitionId}/thumbnail-${timestamp}.${extension}`;
 }
 
+// Generate unique key for user profile picture
+export function generateProfilePictureKey(userId: string, extension: string): string {
+  const timestamp = Date.now();
+  return `users/${userId}/avatar-${timestamp}.${extension}`;
+}
+
