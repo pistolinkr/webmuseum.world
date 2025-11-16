@@ -31,6 +31,8 @@ export default function UserAccountPage() {
     }
 
     async function loadData() {
+      if (!currentUser) return;
+      
       try {
         // Load user's exhibitions
         const data = await getUserExhibitions(currentUser.uid);
