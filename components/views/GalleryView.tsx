@@ -6,6 +6,15 @@ import { Artwork } from '@/types';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/dist/photoswipe.css';
 
+type PhotoSwipeUI = {
+  element?: HTMLElement | null;
+};
+
+const getPhotoSwipeElement = (instance: PhotoSwipe | null): HTMLElement | null => {
+  const ui = instance?.ui as PhotoSwipeUI | undefined;
+  return ui?.element ?? null;
+};
+
 interface GalleryViewProps {
   artworks: Artwork[];
   exhibitionId: string;
@@ -34,7 +43,7 @@ export default function GalleryView({ artworks, exhibitionId }: GalleryViewProps
 
     try {
       // Check if instance has a UI element and if it's in the DOM
-      const uiElement = instance.ui?.element;
+      const uiElement = getPhotoSwipeElement(instance);
       const isInDOM = uiElement && uiElement.parentNode && document.body.contains(uiElement);
       
       if (isInDOM) {
@@ -48,7 +57,8 @@ export default function GalleryView({ artworks, exhibitionId }: GalleryViewProps
             setTimeout(() => {
               try {
                 // Double-check DOM before destroying
-                if (instance.ui?.element?.parentNode && document.body.contains(instance.ui.element)) {
+                const element = getPhotoSwipeElement(instance);
+                if (element?.parentNode && document.body.contains(element)) {
                   instance.destroy();
                 } else {
                   // DOM already removed, just clear reference
@@ -69,7 +79,8 @@ export default function GalleryView({ artworks, exhibitionId }: GalleryViewProps
       setTimeout(() => {
         try {
           // Final check before destroy
-          if (instance.ui?.element?.parentNode && document.body.contains(instance.ui.element)) {
+          const element = getPhotoSwipeElement(instance);
+          if (element?.parentNode && document.body.contains(element)) {
             instance.destroy();
           }
         } catch (e) {
