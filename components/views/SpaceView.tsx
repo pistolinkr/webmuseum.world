@@ -239,7 +239,7 @@ function ExhibitionSpace({ artworks, exhibitionId, onArtworkClick }: {
           new THREE.Vector3(-10 + i, 0.01, 10),
         ];
         return (
-          <line key={`grid-x-${i}`} position={[0, 0, 0]}>
+          <line key={`grid-x-${i}`}>
             <bufferGeometry>
               <bufferAttribute
                 attach="attributes-position"
@@ -261,7 +261,7 @@ function ExhibitionSpace({ artworks, exhibitionId, onArtworkClick }: {
           new THREE.Vector3(10, 0.01, -10 + i),
         ];
         return (
-          <line key={`grid-z-${i}`} position={[0, 0, 0]}>
+          <line key={`grid-z-${i}`}>
             <bufferGeometry>
               <bufferAttribute
                 attach="attributes-position"
