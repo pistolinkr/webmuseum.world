@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from '@/components/auth/LoginForm';
@@ -8,18 +8,11 @@ import Link from 'next/link';
 import { GlowingStarsBackground } from '@/components/ui/glowing-stars';
 import Image from 'next/image';
 
-export default function LoginPage() {
+function MagicLinkHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, loading, isMagicLink, signInWithMagicLink } = useAuth();
+  const { loading, isMagicLink, signInWithMagicLink } = useAuth();
   const [processingMagicLink, setProcessingMagicLink] = useState(false);
-
-  useEffect(() => {
-    if (!loading && currentUser) {
-      // If already logged in, redirect to account page
-      router.push('/account');
-    }
-  }, [currentUser, loading, router]);
 
   // Handle magic link authentication
   useEffect(() => {
@@ -42,12 +35,34 @@ export default function LoginPage() {
     }
   }, [searchParams, loading, isMagicLink, signInWithMagicLink, router]);
 
-  if (loading || processingMagicLink) {
+  if (processingMagicLink) {
+    return (
+      <div className="auth-page__loading">
+        Signing you in...
+      </div>
+    );
+  }
+
+  return null;
+}
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { currentUser, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && currentUser) {
+      // If already logged in, redirect to account page
+      router.push('/account');
+    }
+  }, [currentUser, loading, router]);
+
+  if (loading) {
     return (
       <main className="auth-page">
         <div className="auth-page__container">
           <div className="auth-page__loading">
-            {processingMagicLink ? 'Signing you in...' : 'Loading...'}
+            Loading...
           </div>
         </div>
       </main>
@@ -62,6 +77,9 @@ export default function LoginPage() {
     <main className="auth-page">
       <GlowingStarsBackground className="auth-page__background" />
       <div className="auth-page__container">
+        <Suspense fallback={<div className="auth-page__loading">Loading...</div>}>
+          <MagicLinkHandler />
+        </Suspense>
         <div className="auth-page__content">
           <div className="auth-page__header">
             <Link href="/" className="auth-page__logo">
