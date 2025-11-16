@@ -233,32 +233,50 @@ function ExhibitionSpace({ artworks, exhibitionId, onArtworkClick }: {
       </mesh>
       
       {/* Floor grid pattern */}
-      {Array.from({ length: 20 }).map((_, i) => (
-        <line key={`grid-x-${i}`} position={[-10 + i, 0.01, 0]}>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={2}
-              array={new Float32Array([0, 0, -10, 0, 0, 10])}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
-        </line>
-      ))}
-      {Array.from({ length: 20 }).map((_, i) => (
-        <line key={`grid-z-${i}`} position={[0, 0.01, -10 + i]}>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={2}
-              array={new Float32Array([-10, 0, 0, 10, 0, 0])}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
-        </line>
-      ))}
+      {Array.from({ length: 20 }).map((_, i) => {
+        const points = [
+          new THREE.Vector3(-10 + i, 0.01, -10),
+          new THREE.Vector3(-10 + i, 0.01, 10),
+        ];
+        return (
+          <line key={`grid-x-${i}`} position={[0, 0, 0]}>
+            <bufferGeometry>
+              <bufferAttribute
+                attach="attributes-position"
+                count={2}
+                array={new Float32Array([
+                  points[0].x, points[0].y, points[0].z,
+                  points[1].x, points[1].y, points[1].z,
+                ])}
+                itemSize={3}
+              />
+            </bufferGeometry>
+            <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
+          </line>
+        );
+      })}
+      {Array.from({ length: 20 }).map((_, i) => {
+        const points = [
+          new THREE.Vector3(-10, 0.01, -10 + i),
+          new THREE.Vector3(10, 0.01, -10 + i),
+        ];
+        return (
+          <line key={`grid-z-${i}`} position={[0, 0, 0]}>
+            <bufferGeometry>
+              <bufferAttribute
+                attach="attributes-position"
+                count={2}
+                array={new Float32Array([
+                  points[0].x, points[0].y, points[0].z,
+                  points[1].x, points[1].y, points[1].z,
+                ])}
+                itemSize={3}
+              />
+            </bufferGeometry>
+            <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
+          </line>
+        );
+      })}
 
       {/* Back Wall */}
       <mesh position={[0, 2.5, -10]} receiveShadow>
