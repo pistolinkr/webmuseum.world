@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Transition } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 
@@ -8,12 +8,7 @@ interface TextLoopProps {
   children: React.ReactNode[];
   className?: string;
   interval?: number;
-  transition?: {
-    type?: string;
-    stiffness?: number;
-    damping?: number;
-    mass?: number;
-  };
+  transition?: Transition;
   variants?: {
     initial?: Record<string, any>;
     animate?: Record<string, any>;
@@ -26,7 +21,7 @@ export function TextLoop({
   className = '',
   interval = 2000,
   transition = {
-    type: 'spring',
+    type: 'spring' as const,
     stiffness: 900,
     damping: 80,
     mass: 10,
