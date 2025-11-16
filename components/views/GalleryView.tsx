@@ -15,6 +15,12 @@ const getPhotoSwipeElement = (instance: PhotoSwipe | null): HTMLElement | null =
   return ui?.element ?? null;
 };
 
+const isPhotoSwipeOpened = (instance: PhotoSwipe | null): boolean => {
+  if (!instance) return false;
+  const extendedInstance = instance as PhotoSwipe & { isOpen?: boolean; opened?: boolean };
+  return Boolean(extendedInstance.isOpen ?? extendedInstance.opened ?? false);
+};
+
 interface GalleryViewProps {
   artworks: Artwork[];
   exhibitionId: string;
@@ -50,7 +56,7 @@ export default function GalleryView({ artworks, exhibitionId }: GalleryViewProps
         // Close if open
         try {
           // Check opened state safely
-          const isOpened = instance.opened || (instance as any).isOpen || false;
+          const isOpened = isPhotoSwipeOpened(instance);
           if (isOpened) {
             instance.close();
             // Wait for close animation (longer delay for Safari)
