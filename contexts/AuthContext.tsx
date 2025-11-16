@@ -21,6 +21,7 @@ import {
 import { auth } from '@/lib/firebase';
 import { User } from '@/types';
 import { getUser, createUser, updateUser } from '@/lib/firestore';
+import { registerPasskey as registerPasskeyWebAuthn, authenticateWithPasskey, isWebAuthnSupported } from '@/lib/webauthn';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -40,6 +41,10 @@ interface AuthContextType {
   // Email code authentication
   sendEmailCode: (email: string) => Promise<void>;
   signUpWithEmailCode: (email: string, code: string) => Promise<void>;
+  // Passkey authentication
+  registerPasskey: (deviceName?: string) => Promise<void>;
+  signInWithPasskey: (email?: string) => Promise<void>;
+  isPasskeySupported: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -351,6 +356,96 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Register a new passkey
+  const registerPasskey = async (deviceName?: string) => {
+    if (!currentUser || !userData) {
+      throw new Error('User not authenticated');
+    }
+
+    if (!isWebAuthnSupported()) {
+      throw new Error('WebAuthn/Passkeys are not supported in this browser');
+    }
+
+    try {
+      // Register passkey using WebAuthn
+      const credential = await registerPasskeyWebAuthn(
+        currentUser.uid,
+        currentUser.email || '',
+        userData.displayName || userData.name || currentUser.email || 'User',
+        deviceName
+      );
+
+      // Save passkey to Firestore via API
+      const response = await fetch('/api/auth/passkey/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.uid,
+          credential,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to register passkey');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to register passkey');
+    }
+  };
+
+  // Sign in with passkey
+  const signInWithPasskey = async (email?: string) => {
+    if (!isWebAuthnSupported()) {
+      throw new Error('WebAuthn/Passkeys are not supported in this browser');
+    }
+
+    try {
+      // Get challenge from server
+      const challengeResponse = await fetch('/api/auth/passkey/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!challengeResponse.ok) {
+        const error = await challengeResponse.json();
+        throw new Error(error.error || 'Failed to get challenge');
+      }
+
+      const { challenge } = await challengeResponse.json();
+
+      // Authenticate with passkey
+      const assertion = await authenticateWithPasskey(challenge);
+
+      // Verify with server
+      const verifyResponse = await fetch('/api/auth/passkey/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(assertion),
+      });
+
+      if (!verifyResponse.ok) {
+        const error = await verifyResponse.json();
+        throw new Error(error.error || 'Failed to verify passkey');
+      }
+
+      const { userId } = await verifyResponse.json();
+
+      // Get user and sign in (you may need to implement a custom token flow)
+      // For now, we'll reload the page to trigger auth state change
+      // In production, you'd want to create a custom token and sign in with it
+      window.location.reload();
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to sign in with passkey');
+    }
+  };
+
+  // Check if passkeys are supported
+  const isPasskeySupported = (): boolean => {
+    return isWebAuthnSupported();
+  };
+
   const value: AuthContextType = {
     currentUser,
     userData,
@@ -366,6 +461,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isMagicLink,
     sendEmailCode,
     signUpWithEmailCode,
+    registerPasskey,
+    signInWithPasskey,
+    isPasskeySupported,
   };
 
   return (
