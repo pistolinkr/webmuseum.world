@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useAnimation, useInView } from 'framer-motion';
+import { motion, useAnimation, useInView, Variants } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 
 interface TextRollProps {
@@ -30,7 +30,7 @@ export function TextRoll({
 
   const letters = children.split('');
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -41,7 +41,7 @@ export function TextRoll({
     },
   };
 
-  const letterVariants = {
+  const letterVariants: Variants = {
     hidden: {
       y: 100,
       opacity: 0,
@@ -53,7 +53,7 @@ export function TextRoll({
       rotateX: 0,
       transition: {
         duration: duration,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
       },
     },
   };
