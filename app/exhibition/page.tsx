@@ -100,12 +100,20 @@ export default function ExhibitionsPage() {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          const aDate = a.createdAt || a.startDate || '';
-          const bDate = b.createdAt || b.startDate || '';
+          const aDate = a.createdAt 
+            ? (a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt))
+            : (a.startDate || '');
+          const bDate = b.createdAt 
+            ? (b.createdAt instanceof Date ? b.createdAt.toISOString() : String(b.createdAt))
+            : (b.startDate || '');
           return bDate.localeCompare(aDate);
         case 'oldest':
-          const aDateOld = a.createdAt || a.startDate || '';
-          const bDateOld = b.createdAt || b.startDate || '';
+          const aDateOld = a.createdAt 
+            ? (a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt))
+            : (a.startDate || '');
+          const bDateOld = b.createdAt 
+            ? (b.createdAt instanceof Date ? b.createdAt.toISOString() : String(b.createdAt))
+            : (b.startDate || '');
           return aDateOld.localeCompare(bDateOld);
         case 'title-asc':
           return a.title.localeCompare(b.title);
