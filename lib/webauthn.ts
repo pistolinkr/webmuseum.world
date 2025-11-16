@@ -32,7 +32,12 @@ export function isWebAuthnSupported(): boolean {
 function generateChallenge(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array))
+  // Convert Uint8Array to string without using spread operator (for ES5 compatibility)
+  const chars: string[] = [];
+  for (let i = 0; i < array.length; i++) {
+    chars.push(String.fromCharCode(array[i]));
+  }
+  return btoa(chars.join(''))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
@@ -58,7 +63,12 @@ function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
  */
 function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  const binary = String.fromCharCode(...bytes);
+  // Convert Uint8Array to string without using spread operator (for ES5 compatibility)
+  const chars: string[] = [];
+  for (let i = 0; i < bytes.length; i++) {
+    chars.push(String.fromCharCode(bytes[i]));
+  }
+  const binary = chars.join('');
   return btoa(binary)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
