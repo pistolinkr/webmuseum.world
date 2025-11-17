@@ -1,23 +1,34 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import SignUpForm from '@/components/auth/SignUpForm';
 import Link from 'next/link';
 import { GlowingStarsBackground } from '@/components/ui/glowing-stars';
 import Image from 'next/image';
 
-export default function SignUpPage() {
+function SignUpContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && currentUser) {
-      // If already logged in, redirect to account page
-      router.push('/account');
+      // Get redirect URL from query params or default to account page
+      const redirectTo = searchParams.get('redirect') || '/account';
+      router.push(redirectTo);
     }
-  }, [currentUser, loading, router]);
+  }, [currentUser, loading, router, searchParams]);
+
+  const handleSignUpSuccess = () => {
+    // Get redirect URL from query params or default to account page
+    const redirectTo = searchParams.get('redirect') || '/account';
+    // Small delay to ensure auth state is updated
+    setTimeout(() => {
+      router.push(redirectTo);
+    }, 100);
+  };
 
   if (loading) {
     return (
@@ -57,11 +68,13 @@ export default function SignUpPage() {
 
           <div className="auth-page__form-wrapper">
             <SignUpForm
-              onSuccess={() => {
-                router.push('/account');
-              }}
+              onSuccess={handleSignUpSuccess}
               onSwitchToLogin={() => {
-                router.push('/auth/login');
+                const redirectTo = searchParams.get('redirect');
+                const loginUrl = redirectTo 
+                  ? `/auth/login?redirect=${encodeURIComponent(redirectTo)}`
+                  : '/auth/login';
+                router.push(loginUrl);
               }}
             />
           </div>
@@ -69,7 +82,12 @@ export default function SignUpPage() {
           <div className="auth-page__footer">
             <p>
               Already have an account?{' '}
-              <Link href="/auth/login" className="auth-page__link">
+              <Link 
+                href={searchParams.get('redirect') 
+                  ? `/auth/login?redirect=${encodeURIComponent(searchParams.get('redirect')!)}`
+                  : '/auth/login'} 
+                className="auth-page__link"
+              >
                 Sign in
               </Link>
             </p>
@@ -77,6 +95,20 @@ export default function SignUpPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <main className="auth-page">
+        <div className="auth-page__container">
+          <div className="auth-page__loading">Loading...</div>
+        </div>
+      </main>
+    }>
+      <SignUpContent />
+    </Suspense>
   );
 }
 

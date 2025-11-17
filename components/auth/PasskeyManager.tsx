@@ -10,12 +10,34 @@ interface PasskeyInfo {
   createdAt: Date;
 }
 
+// Auto-detect device name from user agent
+function getDeviceName(): string {
+  if (typeof navigator === 'undefined') return 'Device';
+  
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) {
+    return 'iPhone/iPad';
+  }
+  if (/Android/.test(ua)) {
+    return 'Android Device';
+  }
+  if (/Mac/.test(ua)) {
+    return 'Mac';
+  }
+  if (/Windows/.test(ua)) {
+    return 'Windows PC';
+  }
+  if (/Linux/.test(ua)) {
+    return 'Linux PC';
+  }
+  return 'Device';
+}
+
 export default function PasskeyManager() {
   const { currentUser, registerPasskey, isPasskeySupported } = useAuth();
   const [passkeys, setPasskeys] = useState<PasskeyInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
-  const [deviceName, setDeviceName] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -39,14 +61,18 @@ export default function PasskeyManager() {
   };
 
   const handleRegister = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
 
     setRegistering(true);
     setError('');
 
     try {
-      await registerPasskey(deviceName || undefined);
-      setDeviceName('');
+      // Auto-detect device name
+      const deviceName = getDeviceName();
+      await registerPasskey(deviceName);
       await loadPasskeys();
     } catch (err: any) {
       setError(err.message || 'Failed to register passkey');
@@ -96,23 +122,16 @@ export default function PasskeyManager() {
 
       <div className="passkey-manager__register">
         <h4 className="passkey-manager__subtitle">Register New Passkey</h4>
-        <div className="passkey-manager__register-form">
-          <input
-            type="text"
-            value={deviceName}
-            onChange={(e) => setDeviceName(e.target.value)}
-            placeholder="Device name (e.g., iPhone, MacBook)"
-            className="passkey-manager__input"
-            disabled={registering}
-          />
-          <button
-            onClick={handleRegister}
-            disabled={registering}
-            className="passkey-manager__button"
-          >
-            {registering ? 'Registering...' : 'Register Passkey'}
-          </button>
-        </div>
+        <p className="passkey-manager__register-hint">
+          Click the button below to register this device. You'll be prompted to use your device's biometric authentication.
+        </p>
+        <button
+          onClick={handleRegister}
+          disabled={registering || !currentUser}
+          className="passkey-manager__button passkey-manager__button--primary"
+        >
+          {registering ? 'Registering...' : 'Register This Device'}
+        </button>
       </div>
 
       <div className="passkey-manager__list">
