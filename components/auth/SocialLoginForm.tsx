@@ -28,6 +28,21 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
       console.error('❌ Google sign-in failed:', err);
       console.error('❌ Error code:', err?.code);
       console.error('❌ Error message:', err?.message);
+      
+      // Don't show error if user cancelled or popup was closed
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        console.log('ℹ️ User cancelled sign-in');
+        setLoading(null);
+        return;
+      }
+      
+      // Don't show error if redirecting (popup blocked)
+      if (err?.code === 'auth/popup-blocked') {
+        console.log('ℹ️ Popup blocked, redirecting...');
+        // Don't set loading to null, redirect will navigate away
+        return;
+      }
+      
       setError((prev) => ({ ...prev, google: true }));
       setTimeout(() => {
         setError((prev) => ({ ...prev, google: false }));
@@ -42,9 +57,26 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
     setLoading('microsoft');
     
     try {
+      console.log('🔵 Microsoft sign-in initiated...');
       await signInWithMicrosoft();
+      console.log('✅ Microsoft sign-in successful');
       onSuccess?.();
     } catch (err: any) {
+      console.error('❌ Microsoft sign-in failed:', err);
+      
+      // Don't show error if user cancelled or popup was closed
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        console.log('ℹ️ User cancelled sign-in');
+        setLoading(null);
+        return;
+      }
+      
+      // Don't show error if redirecting (popup blocked)
+      if (err?.code === 'auth/popup-blocked') {
+        console.log('ℹ️ Popup blocked, redirecting...');
+        return;
+      }
+      
       setError((prev) => ({ ...prev, microsoft: true }));
       setTimeout(() => {
         setError((prev) => ({ ...prev, microsoft: false }));
@@ -59,9 +91,26 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
     setLoading('apple');
     
     try {
+      console.log('🔵 Apple sign-in initiated...');
       await signInWithApple();
+      console.log('✅ Apple sign-in successful');
       onSuccess?.();
     } catch (err: any) {
+      console.error('❌ Apple sign-in failed:', err);
+      
+      // Don't show error if user cancelled or popup was closed
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        console.log('ℹ️ User cancelled sign-in');
+        setLoading(null);
+        return;
+      }
+      
+      // Don't show error if redirecting (popup blocked)
+      if (err?.code === 'auth/popup-blocked') {
+        console.log('ℹ️ Popup blocked, redirecting...');
+        return;
+      }
+      
       setError((prev) => ({ ...prev, apple: true }));
       setTimeout(() => {
         setError((prev) => ({ ...prev, apple: false }));
@@ -76,9 +125,26 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
     setLoading('github');
     
     try {
+      console.log('🔵 GitHub sign-in initiated...');
       await signInWithGitHub();
+      console.log('✅ GitHub sign-in successful');
       onSuccess?.();
     } catch (err: any) {
+      console.error('❌ GitHub sign-in failed:', err);
+      
+      // Don't show error if user cancelled or popup was closed
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        console.log('ℹ️ User cancelled sign-in');
+        setLoading(null);
+        return;
+      }
+      
+      // Don't show error if redirecting (popup blocked)
+      if (err?.code === 'auth/popup-blocked') {
+        console.log('ℹ️ Popup blocked, redirecting...');
+        return;
+      }
+      
       setError((prev) => ({ ...prev, github: true }));
       setTimeout(() => {
         setError((prev) => ({ ...prev, github: false }));
