@@ -140,20 +140,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sign in with Google
   const signInWithGoogle = async () => {
-    // Wait for auth to be initialized
-    if (!auth) {
-      // Try to wait a bit for auth to initialize
+    // Wait for auth to be initialized (with retries)
+    let retries = 0;
+    const maxRetries = 10;
+    while (!auth && retries < maxRetries) {
       await new Promise(resolve => setTimeout(resolve, 100));
-      if (!auth) {
-        const error = new Error('Firebase Auth is not initialized. Please check your Firebase configuration.');
-        console.error('❌ Google Sign In Error:', error);
-        throw error;
-      }
+      retries++;
+    }
+    
+    if (!auth) {
+      const error = new Error('Firebase Auth is not initialized. Please check your Firebase configuration and refresh the page.');
+      console.error('❌ Google Sign In Error: Firebase Auth not initialized after', maxRetries, 'retries');
+      throw error;
     }
 
     try {
       const provider = new GoogleAuthProvider();
       console.log('🔵 Starting Google sign-in with popup...');
+      console.log('🔵 Auth instance:', auth ? 'available' : 'missing');
+      console.log('🔵 Auth app:', auth?.app?.name || 'unknown');
+      
       // Use popup for better UX
       const result = await signInWithPopup(auth, provider);
       console.log('✅ Google popup successful, handling sign-in...');
@@ -162,9 +168,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('❌ Google Sign In Error:', error);
       console.error('❌ Error Code:', error?.code);
       console.error('❌ Error Message:', error?.message);
+      console.error('❌ Error Stack:', error?.stack);
       
       // Don't show error for user cancellation
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
         console.log('ℹ️ User closed the popup');
         return; // Silently return, don't show error
       }
@@ -172,13 +179,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // If popup is blocked, try redirect
       if (error.code === 'auth/popup-blocked') {
         console.log('🔄 Popup blocked, trying redirect...');
-        const provider = new GoogleAuthProvider();
-        await signInWithRedirect(auth, provider);
-        return; // Redirect will navigate away, so don't throw error
+        try {
+          const provider = new GoogleAuthProvider();
+          await signInWithRedirect(auth, provider);
+          return; // Redirect will navigate away, so don't throw error
+        } catch (redirectError: any) {
+          console.error('❌ Redirect also failed:', redirectError);
+          throw new Error('Popup was blocked and redirect failed. Please allow popups for this site.');
+        }
+      }
+      
+      // Handle network errors
+      if (error.code === 'auth/network-request-failed') {
+        console.error('❌ Network error during sign-in');
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      
+      // Handle auth domain mismatch
+      if (error.code === 'auth/unauthorized-domain') {
+        console.error('❌ Unauthorized domain');
+        throw new Error('This domain is not authorized. Please contact support.');
       }
       
       // Re-throw with more context
-      const enhancedError = new Error(error.message || 'Failed to sign in with Google');
+      const enhancedError = new Error(error.message || 'Failed to sign in with Google. Please try again.');
       (enhancedError as any).code = error.code;
       throw enhancedError;
     }
@@ -186,12 +210,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sign in with Microsoft
   const signInWithMicrosoft = async () => {
-    // Wait for auth to be initialized
-    if (!auth) {
+    // Wait for auth to be initialized (with retries)
+    let retries = 0;
+    const maxRetries = 10;
+    while (!auth && retries < maxRetries) {
       await new Promise(resolve => setTimeout(resolve, 100));
-      if (!auth) {
-        throw new Error('Firebase Auth is not initialized. Please check your Firebase configuration.');
-      }
+      retries++;
+    }
+    
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized. Please check your Firebase configuration and refresh the page.');
     }
 
     try {
@@ -204,9 +232,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error: any) {
       console.error('❌ Microsoft Sign In Error:', error);
       console.error('❌ Error Code:', error?.code);
+      console.error('❌ Error Message:', error?.message);
       
       // Don't show error for user cancellation
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
         console.log('ℹ️ User closed the popup');
         return;
       }
@@ -214,9 +243,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // If popup is blocked, try redirect
       if (error.code === 'auth/popup-blocked') {
         console.log('🔄 Popup blocked, trying redirect...');
-        const provider = new OAuthProvider('microsoft.com');
-        await signInWithRedirect(auth, provider);
-        return;
+        try {
+          const provider = new OAuthProvider('microsoft.com');
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError: any) {
+          console.error('❌ Redirect also failed:', redirectError);
+          throw new Error('Popup was blocked and redirect failed. Please allow popups for this site.');
+        }
+      }
+      
+      // Handle network errors
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
       }
       
       throw error;
@@ -225,12 +264,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sign in with Apple
   const signInWithApple = async () => {
-    // Wait for auth to be initialized
-    if (!auth) {
+    // Wait for auth to be initialized (with retries)
+    let retries = 0;
+    const maxRetries = 10;
+    while (!auth && retries < maxRetries) {
       await new Promise(resolve => setTimeout(resolve, 100));
-      if (!auth) {
-        throw new Error('Firebase Auth is not initialized. Please check your Firebase configuration.');
-      }
+      retries++;
+    }
+    
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized. Please check your Firebase configuration and refresh the page.');
     }
 
     try {
@@ -243,9 +286,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error: any) {
       console.error('❌ Apple Sign In Error:', error);
       console.error('❌ Error Code:', error?.code);
+      console.error('❌ Error Message:', error?.message);
       
       // Don't show error for user cancellation
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
         console.log('ℹ️ User closed the popup');
         return;
       }
@@ -253,9 +297,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // If popup is blocked, try redirect
       if (error.code === 'auth/popup-blocked') {
         console.log('🔄 Popup blocked, trying redirect...');
-        const provider = new OAuthProvider('apple.com');
-        await signInWithRedirect(auth, provider);
-        return;
+        try {
+          const provider = new OAuthProvider('apple.com');
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError: any) {
+          console.error('❌ Redirect also failed:', redirectError);
+          throw new Error('Popup was blocked and redirect failed. Please allow popups for this site.');
+        }
+      }
+      
+      // Handle network errors
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
       }
       
       throw error;
@@ -264,12 +318,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Sign in with GitHub
   const signInWithGitHub = async () => {
-    // Wait for auth to be initialized
-    if (!auth) {
+    // Wait for auth to be initialized (with retries)
+    let retries = 0;
+    const maxRetries = 10;
+    while (!auth && retries < maxRetries) {
       await new Promise(resolve => setTimeout(resolve, 100));
-      if (!auth) {
-        throw new Error('Firebase Auth is not initialized. Please check your Firebase configuration.');
-      }
+      retries++;
+    }
+    
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized. Please check your Firebase configuration and refresh the page.');
     }
 
     try {
@@ -282,9 +340,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error: any) {
       console.error('❌ GitHub Sign In Error:', error);
       console.error('❌ Error Code:', error?.code);
+      console.error('❌ Error Message:', error?.message);
       
       // Don't show error for user cancellation
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
         console.log('ℹ️ User closed the popup');
         return;
       }
@@ -292,9 +351,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // If popup is blocked, try redirect
       if (error.code === 'auth/popup-blocked') {
         console.log('🔄 Popup blocked, trying redirect...');
-        const provider = new GithubAuthProvider();
-        await signInWithRedirect(auth, provider);
-        return;
+        try {
+          const provider = new GithubAuthProvider();
+          await signInWithRedirect(auth, provider);
+          return;
+        } catch (redirectError: any) {
+          console.error('❌ Redirect also failed:', redirectError);
+          throw new Error('Popup was blocked and redirect failed. Please allow popups for this site.');
+        }
+      }
+      
+      // Handle network errors
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
       }
       
       throw error;
