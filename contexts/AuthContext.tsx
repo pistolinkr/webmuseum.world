@@ -159,8 +159,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('🔵 Starting Google sign-in with popup...');
       console.log('🔵 Auth instance:', auth ? 'available' : 'missing');
       console.log('🔵 Auth app:', auth?.app?.name || 'unknown');
+      console.log('🔵 Current URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
+      
+      // Note: We'll let Firebase handle popup blocking detection
+      // If popup fails, we'll catch the error and fallback to redirect
       
       // Use popup for better UX
+      console.log('🔵 Calling signInWithPopup...');
       const result = await signInWithPopup(auth, provider);
       console.log('✅ Google popup successful, handling sign-in...');
       await handleSocialSignIn(result.user);
@@ -185,7 +190,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return; // Redirect will navigate away, so don't throw error
         } catch (redirectError: any) {
           console.error('❌ Redirect also failed:', redirectError);
-          throw new Error('Popup was blocked and redirect failed. Please allow popups for this site.');
+          throw new Error('Popup was blocked and redirect failed. Please allow popups for this site or try again.');
         }
       }
       
