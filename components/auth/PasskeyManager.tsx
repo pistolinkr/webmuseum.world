@@ -50,11 +50,16 @@ export default function PasskeyManager() {
     if (!currentUser) return;
     
     setLoading(true);
+    setError('');
     try {
       const userPasskeys = await getUserPasskeys(currentUser.uid);
       setPasskeys(userPasskeys);
     } catch (err: any) {
-      setError(err.message || 'Failed to load passkeys');
+      console.error('Failed to load passkeys:', err);
+      // Don't show error if it's just a loading issue
+      if (err.message && !err.message.includes('not found')) {
+        setError(err.message || 'Failed to load passkeys');
+      }
     } finally {
       setLoading(false);
     }
@@ -62,7 +67,7 @@ export default function PasskeyManager() {
 
   const handleRegister = async () => {
     if (!currentUser) {
-      setError('User not authenticated');
+      setError('Please sign in to register a passkey');
       return;
     }
 
@@ -70,12 +75,14 @@ export default function PasskeyManager() {
     setError('');
 
     try {
-      // Auto-detect device name
+      // Auto-detect device name - no user input needed
       const deviceName = getDeviceName();
       await registerPasskey(deviceName);
+      // Reload passkeys after successful registration
       await loadPasskeys();
     } catch (err: any) {
-      setError(err.message || 'Failed to register passkey');
+      console.error('Failed to register passkey:', err);
+      setError(err.message || 'Failed to register passkey. Please try again.');
     } finally {
       setRegistering(false);
     }
@@ -107,11 +114,21 @@ export default function PasskeyManager() {
     );
   }
 
+  if (!currentUser) {
+    return (
+      <div className="passkey-manager">
+        <p className="passkey-manager__description">
+          Please sign in to manage your passkeys.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="passkey-manager">
       <h3 className="passkey-manager__title">Manage Passkeys</h3>
       <p className="passkey-manager__description">
-        Passkeys allow you to sign in using your device's biometric authentication (Face ID, Touch ID, Windows Hello) or a security key.
+        Passkeys allow you to sign in quickly using your device's biometric authentication (Face ID, Touch ID, Windows Hello) or a security key.
       </p>
 
       {error && (
@@ -121,16 +138,16 @@ export default function PasskeyManager() {
       )}
 
       <div className="passkey-manager__register">
-        <h4 className="passkey-manager__subtitle">Register New Passkey</h4>
+        <h4 className="passkey-manager__subtitle">Add This Device</h4>
         <p className="passkey-manager__register-hint">
-          Click the button below to register this device. You'll be prompted to use your device's biometric authentication.
+          Click the button below to add this device. You'll be prompted to use your device's biometric authentication or security key.
         </p>
         <button
           onClick={handleRegister}
-          disabled={registering || !currentUser}
+          disabled={registering}
           className="passkey-manager__button passkey-manager__button--primary"
         >
-          {registering ? 'Registering...' : 'Register This Device'}
+          {registering ? 'Adding device...' : 'Add This Device'}
         </button>
       </div>
 
