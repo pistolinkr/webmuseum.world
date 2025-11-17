@@ -20,9 +20,14 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
     setLoading('google');
     
     try {
+      console.log('🔵 Google sign-in initiated...');
       await signInWithGoogle();
+      console.log('✅ Google sign-in successful');
       onSuccess?.();
     } catch (err: any) {
+      console.error('❌ Google sign-in failed:', err);
+      console.error('❌ Error code:', err?.code);
+      console.error('❌ Error message:', err?.message);
       setError((prev) => ({ ...prev, google: true }));
       setTimeout(() => {
         setError((prev) => ({ ...prev, google: false }));

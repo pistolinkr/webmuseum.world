@@ -23,9 +23,14 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
     setLoading('google');
     
     try {
+      console.log('🔵 Google sign-up initiated...');
       await signInWithGoogle();
+      console.log('✅ Google sign-up successful');
       onSuccess?.();
     } catch (err: any) {
+      console.error('❌ Google sign-up failed:', err);
+      console.error('❌ Error code:', err?.code);
+      console.error('❌ Error message:', err?.message);
       setError((prev) => ({ ...prev, google: true }));
       setTimeout(() => {
         setError((prev) => ({ ...prev, google: false }));

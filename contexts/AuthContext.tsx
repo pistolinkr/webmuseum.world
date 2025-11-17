@@ -141,21 +141,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Sign in with Google
   const signInWithGoogle = async () => {
     if (!auth) {
-      throw new Error('Firebase Auth is not initialized');
+      const error = new Error('Firebase Auth is not initialized');
+      console.error('❌ Google Sign In Error:', error);
+      throw error;
     }
 
     try {
       const provider = new GoogleAuthProvider();
+      console.log('🔵 Starting Google sign-in with popup...');
       // Use popup for better UX
       const result = await signInWithPopup(auth, provider);
+      console.log('✅ Google popup successful, handling sign-in...');
       await handleSocialSignIn(result.user);
     } catch (error: any) {
+      console.error('❌ Google Sign In Error:', error);
+      console.error('❌ Error Code:', error?.code);
+      console.error('❌ Error Message:', error?.message);
+      
       // If popup is blocked, try redirect
       if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        console.log('🔄 Popup blocked/closed, trying redirect...');
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
       } else {
-        throw error;
+        // Re-throw with more context
+        const enhancedError = new Error(error.message || 'Failed to sign in with Google');
+        (enhancedError as any).code = error.code;
+        throw enhancedError;
       }
     }
   };
