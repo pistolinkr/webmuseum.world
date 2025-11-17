@@ -46,16 +46,27 @@ function MagicLinkHandler() {
   return null;
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && currentUser) {
-      // If already logged in, redirect to account page
-      router.push('/account');
+      // Get redirect URL from query params or default to account page
+      const redirectTo = searchParams.get('redirect') || '/account';
+      router.push(redirectTo);
     }
-  }, [currentUser, loading, router]);
+  }, [currentUser, loading, router, searchParams]);
+
+  const handleLoginSuccess = () => {
+    // Get redirect URL from query params or default to account page
+    const redirectTo = searchParams.get('redirect') || '/account';
+    // Small delay to ensure auth state is updated
+    setTimeout(() => {
+      router.push(redirectTo);
+    }, 100);
+  };
 
   if (loading) {
     return (
@@ -100,11 +111,13 @@ export default function LoginPage() {
 
           <div className="auth-page__form-wrapper">
             <LoginForm
-              onSuccess={() => {
-                router.push('/account');
-              }}
+              onSuccess={handleLoginSuccess}
               onSwitchToSignUp={() => {
-                router.push('/auth/signup');
+                const redirectTo = searchParams.get('redirect');
+                const signupUrl = redirectTo 
+                  ? `/auth/signup?redirect=${encodeURIComponent(redirectTo)}`
+                  : '/auth/signup';
+                router.push(signupUrl);
               }}
             />
           </div>
@@ -112,7 +125,12 @@ export default function LoginPage() {
           <div className="auth-page__footer">
             <p>
               Don't have an account?{' '}
-              <Link href="/auth/signup" className="auth-page__link">
+              <Link 
+                href={searchParams.get('redirect') 
+                  ? `/auth/signup?redirect=${encodeURIComponent(searchParams.get('redirect')!)}`
+                  : '/auth/signup'} 
+                className="auth-page__link"
+              >
                 Sign up
               </Link>
             </p>
@@ -120,6 +138,20 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="auth-page">
+        <div className="auth-page__container">
+          <div className="auth-page__loading">Loading...</div>
+        </div>
+      </main>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
 

@@ -197,8 +197,37 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
     }
   };
 
+  // Get loading message based on provider
+  const getLoadingMessage = () => {
+    if (!loading) return null;
+    switch (loading) {
+      case 'google':
+        return 'Opening Google sign-in...';
+      case 'microsoft':
+        return 'Opening Microsoft sign-in...';
+      case 'apple':
+        return 'Opening Apple sign-in...';
+      case 'github':
+        return 'Opening GitHub sign-in...';
+      case 'email':
+      case 'apply':
+        return 'Sending verification code...';
+      case 'signup':
+        return 'Creating your account...';
+      default:
+        return 'Signing up...';
+    }
+  };
+
   return (
     <div className="auth-form">
+      {loading && (
+        <div className="auth-form__loading-overlay">
+          <div className="auth-form__loading-message">
+            {getLoadingMessage()}
+          </div>
+        </div>
+      )}
       <div className="auth-form__social-buttons">
         <button
           type="button"

@@ -323,6 +323,32 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: relative;
+}
+
+.auth-form__loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: var(--radius-sm);
+}
+
+.auth-form__loading-message {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 1rem 2rem;
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .auth-form__title {
