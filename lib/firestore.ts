@@ -354,14 +354,57 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
   try {
     const firestoreDb = ensureDb();
     const docRef = doc(firestoreDb, USERS_COLLECTION, userId);
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: Timestamp.now(),
+    
+    // Try to update first - if document doesn't exist, updateDoc will fail
+    // In that case, we'll catch and use setDoc instead
+    try {
+      // Try updateDoc first (works for existing documents and queues offline)
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      });
+      console.log('✅ Firebase: User updated successfully');
+      return true;
+    } catch (updateError: any) {
+      // If updateDoc fails because document doesn't exist, create it
+      if (updateError?.code === 'not-found' || updateError?.message?.includes('No document to update')) {
+        console.log('⚠️ Firebase: User document does not exist, creating new user document');
+        // Use setDoc with merge to avoid overwriting if document exists
+        await setDoc(docRef, {
+          id: userId,
+          ...updates,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        }, { merge: true });
+        console.log('✅ Firebase: User document created successfully');
+        return true;
+      }
+      // If it's an offline error, the update is queued - that's fine
+      if (isOfflineError(updateError)) {
+        console.warn('⚠️ Firebase: Client is offline. Update is queued and will sync when connection is restored.');
+        return true;
+      }
+      // Re-throw other errors
+      throw updateError;
+    }
+  } catch (error: any) {
+    console.error('❌ Firebase: Error updating user:', error);
+    console.error('Error details:', {
+      code: error?.code,
+      message: error?.message,
+      name: error?.name
     });
-    return true;
-  } catch (error) {
-    console.error('Error updating user:', error);
-    return false;
+    
+    // Firestore with offline persistence will queue writes when offline
+    // So we should only throw errors for actual failures, not offline state
+    if (isOfflineError(error)) {
+      console.warn('⚠️ Firebase: Client is offline. Update is queued and will sync when connection is restored.');
+      // Don't throw - offline writes are queued and will sync automatically
+      return true;
+    }
+    
+    // For other errors, throw to let caller handle
+    throw error;
   }
 }
 

@@ -3,9 +3,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const router = useRouter();
+  const { currentUser } = useAuth();
+
+  const handleAccountClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!currentUser) {
+      e.preventDefault();
+      router.push('/auth/login');
+    }
+  };
 
   return (
     <motion.footer
@@ -70,7 +81,11 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/account" className="footer__link">
+                  <Link 
+                    href="/account" 
+                    className="footer__link"
+                    onClick={handleAccountClick}
+                  >
                     My Account
                   </Link>
                 </li>
@@ -93,10 +108,10 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="footer__bottom">
           <p className="footer__copyright">
-            © {currentYear} Web Museum. All rights reserved.
+            © {currentYear} Pistolinkr. All rights reserved.
           </p>
           <p className="footer__tagline">
-            Built with care for art lovers.
+            Made with G.gear service 𝚫 team.
           </p>
         </div>
       </div>

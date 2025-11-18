@@ -58,7 +58,7 @@ export default function LandingHeader() {
           : `rgba(229, 231, 235, ${scrollOpacity})`,
       }}
     >
-      <div className="landing-header__container">
+      <div className={`landing-header__container${!currentUser && !loading ? ' landing-header__container--guest' : ''}`}>
         <Link href="/" className="landing-header__logo" prefetch={true}>
           <Image
             src={isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
@@ -97,12 +97,6 @@ export default function LandingHeader() {
               >
                 {userData?.displayName || userData?.name || currentUser.email}
               </Link>
-              <button
-                onClick={() => signOut()}
-                className="landing-header__sign-out"
-              >
-                Sign Out
-              </button>
             </div>
           ) : (
             <div className="landing-header__auth-buttons">

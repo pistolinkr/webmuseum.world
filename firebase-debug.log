@@ -1,0 +1,145 @@
+[debug] [2025-11-18T01:46:15.374Z] ----------------------------------------------------------------------
+[debug] [2025-11-18T01:46:15.407Z] Command:       /opt/homebrew/Cellar/node/24.4.0/bin/node /opt/homebrew/bin/firebase login --no-localhost
+[debug] [2025-11-18T01:46:15.410Z] CLI Version:   14.25.0
+[debug] [2025-11-18T01:46:15.410Z] Platform:      darwin
+[debug] [2025-11-18T01:46:15.411Z] Node Version:  v24.4.0
+[debug] [2025-11-18T01:46:15.411Z] Time:          Tue Nov 18 2025 10:46:15 GMT+0900 (Korean Standard Time)
+[debug] [2025-11-18T01:46:15.411Z] ----------------------------------------------------------------------
+[debug] 
+[error] 
+[error] Error: Cannot run login in non-interactive mode. See login:ci to generate a token for use in non-interactive environments.
+[debug] [2025-11-18T01:46:22.428Z] ----------------------------------------------------------------------
+[debug] [2025-11-18T01:46:22.438Z] Command:       /opt/homebrew/Cellar/node/24.4.0/bin/node /opt/homebrew/bin/firebase projects:list
+[debug] [2025-11-18T01:46:22.438Z] CLI Version:   14.25.0
+[debug] [2025-11-18T01:46:22.438Z] Platform:      darwin
+[debug] [2025-11-18T01:46:22.438Z] Node Version:  v24.4.0
+[debug] [2025-11-18T01:46:22.438Z] Time:          Tue Nov 18 2025 10:46:22 GMT+0900 (Korean Standard Time)
+[debug] [2025-11-18T01:46:22.439Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-18T01:46:22.578Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-18T01:46:22.579Z] > authorizing via signed-in user (crumeda@icloud.com)
+[debug] [2025-11-18T01:46:22.581Z] Checked if tokens are valid: false, expires at: 1763364173602
+[debug] [2025-11-18T01:46:22.581Z] Checked if tokens are valid: false, expires at: 1763364173602
+[debug] [2025-11-18T01:46:22.581Z] > refreshing access token with scopes: []
+[debug] [2025-11-18T01:46:22.583Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-11-18T01:46:22.583Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-18T01:46:23.056Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-11-18T01:46:23.057Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-11-18T01:46:23.068Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2025-11-18T01:46:23.988Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2025-11-18T01:46:23.988Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] ┌──────────────────────┬──────────────────────┬────────────────┬──────────────────────┐
+│ Project Display Name │ Project ID           │ Project Number │ Resource Location ID │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ Abric                │ abric-auth (current) │ 690879105172   │ [Not specified]      │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ Essential-times      │ essential-times      │ 675300447065   │ [Not specified]      │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ IDPod                │ idpod-1b9b4          │ 303092341043   │ [Not specified]      │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ Pistolinkr           │ pistolinkor          │ 1055337225519  │ [Not specified]      │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ BioLabs              │ prionlab-28116       │ 531953772834   │ [Not specified]      │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ ProLab 2025          │ prolab2025           │ 477640586783   │ [Not specified]      │
+├──────────────────────┼──────────────────────┼────────────────┼──────────────────────┤
+│ webmuseum            │ webmuseumworld       │ 721007036957   │ [Not specified]      │
+└──────────────────────┴──────────────────────┴────────────────┴──────────────────────┘
+[info] 
+[info] 7 project(s) total.
+[debug] [2025-11-18T01:46:28.460Z] ----------------------------------------------------------------------
+[debug] [2025-11-18T01:46:28.464Z] Command:       /opt/homebrew/Cellar/node/24.4.0/bin/node /opt/homebrew/bin/firebase use webmuseumworld
+[debug] [2025-11-18T01:46:28.464Z] CLI Version:   14.25.0
+[debug] [2025-11-18T01:46:28.464Z] Platform:      darwin
+[debug] [2025-11-18T01:46:28.464Z] Node Version:  v24.4.0
+[debug] [2025-11-18T01:46:28.464Z] Time:          Tue Nov 18 2025 10:46:28 GMT+0900 (Korean Standard Time)
+[debug] [2025-11-18T01:46:28.464Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-18T01:46:28.589Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-18T01:46:28.590Z] > authorizing via signed-in user (crumeda@icloud.com)
+[debug] [2025-11-18T01:46:28.591Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:28.591Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:28.592Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/cloudresourcemanager.googleapis.com [none]
+[debug] [2025-11-18T01:46:28.592Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/webmuseumworld
+[debug] [2025-11-18T01:46:30.262Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/cloudresourcemanager.googleapis.com 200
+[debug] [2025-11-18T01:46:30.263Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/cloudresourcemanager.googleapis.com [omitted]
+[debug] [2025-11-18T01:46:30.271Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:30.272Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:30.272Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld [none]
+[debug] [2025-11-18T01:46:31.349Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld 200
+[debug] [2025-11-18T01:46:31.351Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld {"projectNumber":"721007036957","projectId":"webmuseumworld","lifecycleState":"ACTIVE","name":"webmuseum","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-11-09T23:56:32.525591Z"}
+[info] Now using project webmuseumworld
+[debug] [2025-11-18T01:46:44.869Z] ----------------------------------------------------------------------
+[debug] [2025-11-18T01:46:44.882Z] Command:       /opt/homebrew/Cellar/node/24.4.0/bin/node /opt/homebrew/bin/firebase deploy --only storage
+[debug] [2025-11-18T01:46:44.882Z] CLI Version:   14.25.0
+[debug] [2025-11-18T01:46:44.882Z] Platform:      darwin
+[debug] [2025-11-18T01:46:44.882Z] Node Version:  v24.4.0
+[debug] [2025-11-18T01:46:44.882Z] Time:          Tue Nov 18 2025 10:46:44 GMT+0900 (Korean Standard Time)
+[debug] [2025-11-18T01:46:44.882Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-18T01:46:45.323Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-18T01:46:45.325Z] > authorizing via signed-in user (crumeda@icloud.com)
+[debug] [2025-11-18T01:46:45.325Z] [iam] checking project webmuseumworld for permissions ["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2025-11-18T01:46:45.326Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:45.326Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:45.327Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld:testIamPermissions [none]
+[debug] [2025-11-18T01:46:45.327Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld:testIamPermissions x-goog-quota-user=projects/webmuseumworld
+[debug] [2025-11-18T01:46:45.327Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-11-18T01:46:46.507Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld:testIamPermissions 200
+[debug] [2025-11-18T01:46:46.511Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/webmuseumworld:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[info] 
+[info] === Deploying to 'webmuseumworld'...
+[info] 
+[info] i  deploying storage 
+[info] i  storage: ensuring required API firebasestorage.googleapis.com is enabled... 
+[debug] [2025-11-18T01:46:46.518Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:46.518Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:46.518Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/firebasestorage.googleapis.com [none]
+[debug] [2025-11-18T01:46:46.518Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/firebasestorage.googleapis.com x-goog-quota-user=projects/webmuseumworld
+[debug] [2025-11-18T01:46:47.815Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/firebasestorage.googleapis.com 200
+[debug] [2025-11-18T01:46:47.815Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/webmuseumworld/services/firebasestorage.googleapis.com [omitted]
+[info] ✔  storage: required API firebasestorage.googleapis.com is enabled 
+[debug] [2025-11-18T01:46:47.829Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:47.830Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:47.830Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/webmuseumworld/defaultBucket [none]
+[debug] [2025-11-18T01:46:49.061Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/webmuseumworld/defaultBucket 200
+[debug] [2025-11-18T01:46:49.061Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/webmuseumworld/defaultBucket {"name":"projects/webmuseumworld/defaultBucket","location":"US-CENTRAL1","bucket":{"name":"projects/webmuseumworld/buckets/webmuseumworld.firebasestorage.app"},"storageClass":"REGIONAL"}
+[info] i  firebase.storage: checking storage.rules for compilation errors... 
+[debug] [2025-11-18T01:46:49.066Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:49.067Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:49.067Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld:test [none]
+[debug] [2025-11-18T01:46:49.067Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld:test [omitted]
+[debug] [2025-11-18T01:46:50.628Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld:test 200
+[debug] [2025-11-18T01:46:50.628Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld:test {}
+[info] ✔  firebase.storage: rules file storage.rules compiled successfully 
+[debug] [2025-11-18T01:46:50.630Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:50.630Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:50.630Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases pageSize=10&pageToken=
+[debug] [2025-11-18T01:46:51.820Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases 200
+[debug] [2025-11-18T01:46:51.820Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases {"releases":[{"name":"projects/webmuseumworld/releases/cloud.firestore/webmuseum","rulesetName":"projects/webmuseumworld/rulesets/1d9abe11-c174-4503-8af4-9723dd77c7b1","createTime":"2025-11-17T02:06:16.908573Z","updateTime":"2025-11-17T02:28:35.072599Z"},{"name":"projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app","rulesetName":"projects/webmuseumworld/rulesets/75d5bbf4-64f7-44a7-93e9-3c16e123b55f","createTime":"2025-11-17T02:34:27.730023Z","updateTime":"2025-11-17T02:34:55.130433Z"}]}
+[debug] [2025-11-18T01:46:51.848Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:51.848Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:51.848Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets/75d5bbf4-64f7-44a7-93e9-3c16e123b55f [none]
+[debug] [2025-11-18T01:46:52.954Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets/75d5bbf4-64f7-44a7-93e9-3c16e123b55f 200
+[debug] [2025-11-18T01:46:52.955Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets/75d5bbf4-64f7-44a7-93e9-3c16e123b55f [omitted]
+[info] i  storage: uploading rules storage.rules... 
+[debug] [2025-11-18T01:46:52.959Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:52.959Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:52.959Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets [none]
+[debug] [2025-11-18T01:46:52.960Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets [omitted]
+[debug] [2025-11-18T01:46:54.102Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets 200
+[debug] [2025-11-18T01:46:54.102Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/webmuseumworld/rulesets {"name":"projects/webmuseumworld/rulesets/b867e97d-ec72-442a-ab1b-80c0f5a04fbd","source":{"files":[{"content":"rules_version = '2';\nservice firebase.storage {\n  match /b/{bucket}/o {\n    // Helper function to check if user is authenticated\n    function isAuthenticated() {\n      return request.auth != null;\n    }\n    \n    // Helper function to check if user owns the file\n    function isOwner(userId) {\n      return isAuthenticated() && request.auth.uid == userId;\n    }\n    \n    // User profile pictures and cover images\n    match /users/{userId}/{allPaths=**} {\n      // Users can read any user's profile images (public)\n      allow read: if true;\n      \n      // Users can only upload/update/delete their own profile images\n      allow write: if isOwner(userId);\n    }\n    \n    // Exhibition images\n    match /exhibitions/{exhibitionId}/{allPaths=**} {\n      // Anyone can read exhibition images (public exhibitions)\n      allow read: if true;\n      \n      // Only authenticated users can upload exhibition images\n      // Note: In production, you might want to verify the user owns the exhibition\n      allow write: if isAuthenticated();\n    }\n  }\n}\n\n","name":"storage.rules"}]},"createTime":"2025-11-18T01:46:53.967823Z","metadata":{"services":["firebase.storage"]}}
+[debug] [2025-11-18T01:46:54.102Z] [rules] created ruleset projects/webmuseumworld/rulesets/b867e97d-ec72-442a-ab1b-80c0f5a04fbd
+[debug] [2025-11-18T01:46:54.102Z] [rules] releasing firebase.storage/webmuseumworld.firebasestorage.app with ruleset projects/webmuseumworld/rulesets/b867e97d-ec72-442a-ab1b-80c0f5a04fbd
+[debug] [2025-11-18T01:46:54.103Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:54.103Z] Checked if tokens are valid: true, expires at: 1763433982057
+[debug] [2025-11-18T01:46:54.103Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app [none]
+[debug] [2025-11-18T01:46:54.103Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app {"release":{"name":"projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app","rulesetName":"projects/webmuseumworld/rulesets/b867e97d-ec72-442a-ab1b-80c0f5a04fbd"}}
+[debug] [2025-11-18T01:46:54.469Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app 200
+[debug] [2025-11-18T01:46:54.470Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app {"name":"projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app","rulesetName":"projects/webmuseumworld/rulesets/b867e97d-ec72-442a-ab1b-80c0f5a04fbd","createTime":"2025-11-17T02:34:27.730023Z","updateTime":"2025-11-18T01:46:54.324308Z"}
+[debug] [2025-11-18T01:46:54.470Z] [rules] updated release projects/webmuseumworld/releases/firebase.storage/webmuseumworld.firebasestorage.app
+[info] ✔  storage: released rules storage.rules to firebase.storage 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/webmuseumworld/overview

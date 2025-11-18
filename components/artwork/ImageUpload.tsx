@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
-import { uploadFile, generateArtworkKey } from '@/lib/storage';
+import { uploadToFirebaseStorage, getArtworkImagePath } from '@/lib/firebaseStorage';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ImageUploadProps {
   exhibitionId: string;
@@ -18,6 +19,7 @@ export default function ImageUpload({
   onImageUploaded,
   onError,
 }: ImageUploadProps) {
+  const { currentUser } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
@@ -25,7 +27,7 @@ export default function ImageUpload({
 
   const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !currentUser) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -53,9 +55,9 @@ export default function ImageUpload({
     try {
       const extension = file.name.split('.').pop() || 'jpg';
       const tempId = artworkId || `temp-${Date.now()}`;
-      const key = generateArtworkKey(exhibitionId, tempId, extension);
+      const path = getArtworkImagePath(exhibitionId, tempId, extension);
 
-      const imageUrl = await uploadFile(file, key, (progress) => {
+      const imageUrl = await uploadToFirebaseStorage(file, path, (progress) => {
         setUploadProgress(progress);
       });
 

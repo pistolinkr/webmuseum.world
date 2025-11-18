@@ -240,19 +240,19 @@ function ExhibitionSpace({ artworks, exhibitionId, onArtworkClick }: {
         ];
         return (
           <line key={`grid-x-${i}`}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={2}
                 array={new Float32Array([
                   points[0].x, points[0].y, points[0].z,
                   points[1].x, points[1].y, points[1].z,
                 ])}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
-          </line>
+              itemSize={3}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
+        </line>
         );
       })}
       {Array.from({ length: 20 }).map((_, i) => {
@@ -262,19 +262,19 @@ function ExhibitionSpace({ artworks, exhibitionId, onArtworkClick }: {
         ];
         return (
           <line key={`grid-z-${i}`}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              count={2}
                 array={new Float32Array([
                   points[0].x, points[0].y, points[0].z,
                   points[1].x, points[1].y, points[1].z,
                 ])}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
-          </line>
+              itemSize={3}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color="#d0d0d0" opacity={0.3} transparent />
+        </line>
         );
       })}
 

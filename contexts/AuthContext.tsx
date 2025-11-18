@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { 
   User as FirebaseUser,
   signOut as firebaseSignOut,
@@ -65,48 +65,139 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userData, setUserData] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+  const loadedUserIdRef = useRef<string | null>(null);
 
   // Load user data from Firestore when auth state changes
   useEffect(() => {
     if (!auth) {
+      console.warn('⚠️ Firebase Auth is not initialized');
       setLoading(false);
+      setInitialized(true);
       return;
     }
 
-    // Handle redirect result (for social login)
-    getRedirectResult(auth).then((result) => {
-      if (result?.user) {
-        handleSocialSignIn(result.user);
-      }
-    }).catch((error) => {
-      console.error('Error handling redirect result:', error);
-    });
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
+    // Check current auth state immediately (synchronous check) - this is fast!
+    const currentAuthUser = auth.currentUser;
+    if (currentAuthUser && !initialized) {
+      // If user is already authenticated, set user immediately to reduce loading time
+      setCurrentUser(currentAuthUser);
+      setLoading(false); // Set loading to false immediately - don't wait for Firestore
+      setInitialized(true);
+      loadedUserIdRef.current = currentAuthUser.uid;
       
-      if (user) {
-        // Load user data from Firestore
-        try {
-          const userDoc = await getUser(user.uid);
+      // Load user data in background (non-blocking)
+      getUser(currentAuthUser.uid)
+        .then((userDoc) => {
           if (userDoc) {
+            console.log('✅ User data loaded:', userDoc);
             setUserData(userDoc);
           } else {
-            // Create user document if it doesn't exist (for social login)
-            await handleSocialSignIn(user);
+            console.warn('⚠️ User document not found in Firestore, will be created on first update');
+            // Create a minimal userData object from Firebase Auth
+            setUserData({
+              id: currentAuthUser.uid,
+              email: currentAuthUser.email || '',
+              name: currentAuthUser.displayName || undefined,
+              displayName: currentAuthUser.displayName || undefined,
+              avatarUrl: currentAuthUser.photoURL || undefined,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Error loading user data:', error);
+          // Even if loading fails, create minimal userData from Auth
+          setUserData({
+            id: currentAuthUser.uid,
+            email: currentAuthUser.email || '',
+            name: currentAuthUser.displayName || undefined,
+            displayName: currentAuthUser.displayName || undefined,
+            avatarUrl: currentAuthUser.photoURL || undefined,
+          });
+        });
+    } else if (!currentAuthUser && !initialized) {
+      // No user, set loading to false immediately
+      setLoading(false);
+      setInitialized(true);
+    }
+
+    // Set a shorter timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (!initialized) {
+        console.warn('⚠️ Auth loading timeout - setting loading to false');
+        setLoading(false);
+        setInitialized(true);
+      }
+    }, 1500); // Reduced to 1.5 seconds
+
+    // Handle redirect result (for social login) - don't block initial render
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          handleSocialSignIn(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error('Error handling redirect result:', error);
+      });
+
+    let isMounted = true;
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        if (!isMounted) return;
+        
+        try {
+          setCurrentUser(user);
+          
+          if (user) {
+            // Only load user data if we haven't loaded it yet or if user changed
+            if (loadedUserIdRef.current !== user.uid) {
+              try {
+                const userDoc = await getUser(user.uid);
+                if (userDoc) {
+                  setUserData(userDoc);
+                  loadedUserIdRef.current = user.uid;
+                } else {
+                  // Create user document if it doesn't exist (for social login)
+                  await handleSocialSignIn(user);
+                  loadedUserIdRef.current = user.uid;
+                }
+              } catch (error) {
+                console.error('Error loading user data:', error);
+              }
+            }
+          } else {
+            setUserData(null);
+            loadedUserIdRef.current = null;
           }
         } catch (error) {
-          console.error('Error loading user data:', error);
+          console.error('Error in auth state change handler:', error);
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+            setInitialized(true);
+            clearTimeout(loadingTimeout);
+          }
         }
-      } else {
-        setUserData(null);
+      },
+      (error) => {
+        console.error('❌ Auth state change error:', error);
+        if (isMounted) {
+          setLoading(false);
+          setInitialized(true);
+          clearTimeout(loadingTimeout);
+        }
       }
-      
-      setLoading(false);
-    });
+    );
 
-    return unsubscribe;
-  }, []);
+    return () => {
+      isMounted = false;
+      clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
+  }, [initialized]);
 
   // Helper function to handle social sign-in and create user document
   const handleSocialSignIn = async (user: FirebaseUser) => {
@@ -487,22 +578,80 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error('User not authenticated');
     }
     
+    console.log('updateUserProfile: Starting update for user', currentUser.uid);
+    console.log('updateUserProfile: Updates to apply', updates);
+    
     // Update Firestore user document
+    // updateUser now throws on error, so we don't need to check return value
     await updateUser(currentUser.uid, updates);
+    console.log('updateUserProfile: Firestore update completed successfully');
     
     // Update Firebase Auth profile if displayName or photoURL changed
-    if (updates.displayName || updates.avatarUrl) {
-      await updateProfile(currentUser, {
-        displayName: updates.displayName || currentUser.displayName || undefined,
-        photoURL: updates.avatarUrl || currentUser.photoURL || undefined,
-      });
+    const shouldUpdateAuthProfile = Boolean(updates.displayName || updates.avatarUrl);
+    if (shouldUpdateAuthProfile) {
+      const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
+      if (!isOnline) {
+        console.warn('updateUserProfile: Skipping Firebase Auth profile update because device is offline');
+      } else {
+        console.log('updateUserProfile: Updating Firebase Auth profile');
+        try {
+          const profilePromise = updateProfile(currentUser, {
+            displayName: updates.displayName || currentUser.displayName || undefined,
+            photoURL: updates.avatarUrl || currentUser.photoURL || undefined,
+          });
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Firebase Auth profile update timed out')), 8000);
+          });
+          await Promise.race([profilePromise, timeoutPromise]);
+          console.log('updateUserProfile: Firebase Auth profile updated');
+        } catch (error: any) {
+          console.error('updateUserProfile: Error updating Auth profile', error);
+          // Don't throw - Firestore update succeeded, Auth update is secondary
+        }
+      }
     }
     
-    // Reload user data
-    const updatedUser = await getUser(currentUser.uid);
-    if (updatedUser) {
-      setUserData(updatedUser);
+    // Update userData optimistically with the updates we just applied
+    // This ensures UI updates immediately even if getUser fails (e.g., offline)
+    console.log('updateUserProfile: Updating userData optimistically');
+    if (userData) {
+      const updatedUserData = {
+        ...userData,
+        ...updates,
+      };
+      console.log('updateUserProfile: UserData updated optimistically', updatedUserData);
+      setUserData(updatedUserData);
+    } else {
+      // If userData doesn't exist, create it from currentUser + updates
+      const newUserData: User = {
+        id: currentUser.uid,
+        email: currentUser.email || '',
+        ...updates,
+        name: updates.displayName || currentUser.displayName || undefined,
+        displayName: updates.displayName || currentUser.displayName || undefined,
+        avatarUrl: updates.avatarUrl || currentUser.photoURL || undefined,
+      };
+      console.log('updateUserProfile: Created new userData', newUserData);
+      setUserData(newUserData);
     }
+    
+    // Try to reload from Firestore in background (non-blocking)
+    console.log('updateUserProfile: Reloading user data from Firestore (background)');
+    getUser(currentUser.uid)
+      .then((updatedUser) => {
+        if (updatedUser) {
+          console.log('updateUserProfile: User data reloaded from Firestore', updatedUser);
+          setUserData(updatedUser);
+        } else {
+          console.warn('updateUserProfile: User data not found in Firestore, using optimistic update');
+        }
+      })
+      .catch((error: any) => {
+        console.warn('updateUserProfile: Error reloading user data (non-critical)', error);
+        // Don't throw - we already updated userData optimistically
+      });
+    
+    console.log('updateUserProfile: Update completed successfully');
   };
 
   // Register a new passkey

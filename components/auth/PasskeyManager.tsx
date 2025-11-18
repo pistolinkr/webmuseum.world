@@ -58,7 +58,7 @@ export default function PasskeyManager() {
       console.error('Failed to load passkeys:', err);
       // Don't show error if it's just a loading issue
       if (err.message && !err.message.includes('not found')) {
-        setError(err.message || 'Failed to load passkeys');
+      setError(err.message || 'Failed to load passkeys');
       }
     } finally {
       setLoading(false);

@@ -11,9 +11,6 @@ export default function PrivacyPage() {
     <main className="legal-page">
       <div className="legal-page__container">
         <div className="legal-page__header">
-          <Link href="/" className="legal-page__logo">
-            Web Museum
-          </Link>
           <h1 className="legal-page__title">Privacy Policy</h1>
           <p className="legal-page__subtitle">
             Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}

@@ -62,9 +62,11 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  username?: string; // Unique username/handle
   displayName?: string; // Public display name
   bio?: string; // User bio/description
   avatarUrl?: string; // Profile picture URL
+  coverImageUrl?: string; // Cover/banner image URL
   category?: string; // Field/category of activity (e.g., "Digital Art", "Photography", "Sculpture")
   location?: string; // User location
   website?: string; // Personal website

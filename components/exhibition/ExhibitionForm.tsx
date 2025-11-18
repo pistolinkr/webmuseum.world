@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Exhibition } from '@/types';
 import { createExhibition, updateExhibition } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { uploadToFirebaseStorage, getExhibitionThumbnailPath } from '@/lib/firebaseStorage';
 
 interface ExhibitionFormProps {
   exhibition?: Exhibition;
@@ -17,6 +18,9 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [thumbnailUploadProgress, setThumbnailUploadProgress] = useState(0);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     title: exhibition?.title || '',
@@ -31,6 +35,52 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
     tags: exhibition?.tags?.join(', ') || '',
     thumbnailUrl: exhibition?.thumbnailUrl || '',
   });
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size must be less than 10MB');
+      return;
+    }
+
+    setUploadingThumbnail(true);
+    setThumbnailUploadProgress(0);
+    setError('');
+
+    try {
+      const extension = file.name.split('.').pop() || 'jpg';
+      // Use exhibition ID if editing, otherwise use temp ID
+      const exhibitionId = exhibition?.id || `temp-${Date.now()}`;
+      const path = getExhibitionThumbnailPath(exhibitionId, extension);
+
+      const imageUrl = await uploadToFirebaseStorage(file, path, (progress) => {
+        setThumbnailUploadProgress(progress);
+      });
+
+      if (imageUrl) {
+        setFormData({ ...formData, thumbnailUrl: imageUrl });
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload thumbnail image');
+    } finally {
+      setUploadingThumbnail(false);
+      setThumbnailUploadProgress(0);
+      if (thumbnailInputRef.current) {
+        thumbnailInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -211,16 +261,67 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
 
       <div className="exhibition-form__field">
         <label htmlFor="thumbnailUrl" className="exhibition-form__label">
-          Thumbnail Image URL
+          Thumbnail Image
         </label>
-        <input
-          id="thumbnailUrl"
-          type="url"
-          value={formData.thumbnailUrl}
-          onChange={(e) => setFormData({ ...formData, thumbnailUrl: e.target.value })}
-          className="exhibition-form__input"
-          placeholder="https://example.com/image.jpg"
-        />
+        {formData.thumbnailUrl ? (
+          <div className="exhibition-form__thumbnail-preview">
+            <img
+              src={formData.thumbnailUrl}
+              alt="Thumbnail preview"
+              className="exhibition-form__thumbnail-image"
+            />
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, thumbnailUrl: '' })}
+              className="exhibition-form__thumbnail-remove"
+              disabled={uploadingThumbnail}
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="exhibition-form__thumbnail-upload">
+            <div className="exhibition-form__thumbnail-placeholder">
+              <svg
+                className="exhibition-form__thumbnail-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <p className="exhibition-form__thumbnail-text">Click to upload thumbnail</p>
+              <p className="exhibition-form__thumbnail-hint">Max 10MB</p>
+            </div>
+            {uploadingThumbnail && (
+              <div className="exhibition-form__thumbnail-progress">
+                <div className="exhibition-form__thumbnail-progress-bar">
+                  <div
+                    className="exhibition-form__thumbnail-progress-fill"
+                    style={{ width: `${thumbnailUploadProgress}%` }}
+                  />
+                </div>
+                <span className="exhibition-form__thumbnail-progress-text">
+                  {Math.round(thumbnailUploadProgress)}%
+                </span>
+              </div>
+            )}
+            <input
+              ref={thumbnailInputRef}
+              id="thumbnailUrl"
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailUpload}
+              disabled={uploadingThumbnail}
+              className="exhibition-form__thumbnail-input"
+            />
+          </div>
+        )}
       </div>
 
       <div className="exhibition-form__row">
