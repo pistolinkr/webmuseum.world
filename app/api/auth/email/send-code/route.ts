@@ -47,11 +47,22 @@ export async function POST(request: NextRequest) {
     });
 
     // Send email with code
-    try {
-      // Use Resend API if available, otherwise log to console
-      const resendApiKey = process.env.RESEND_API_KEY;
-      
-      if (resendApiKey) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    
+    if (!resendApiKey) {
+      // In production, we need Resend API key to send emails
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (isProduction) {
+        return NextResponse.json(
+          { error: 'Email service not configured. Please contact support.' },
+          { status: 500 }
+        );
+      }
+      // Development fallback: log to console
+      console.log(`📧 Email verification code for ${email}: ${code}`);
+      console.log('⚠️ RESEND_API_KEY not set. Email not sent. Code logged above for development.');
+    } else {
+      try {
         const resendResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -81,15 +92,13 @@ export async function POST(request: NextRequest) {
           console.error('Resend API error:', errorData);
           throw new Error('Failed to send email via Resend');
         }
-      } else {
-        // Fallback: log to console (for development)
-        console.log(`📧 Email verification code for ${email}: ${code}`);
-        console.log('⚠️ RESEND_API_KEY not set. Email not sent. Code logged above for development.');
+      } catch (emailError: any) {
+        console.error('Error sending email:', emailError);
+        return NextResponse.json(
+          { error: 'Failed to send verification email. Please try again.' },
+          { status: 500 }
+        );
       }
-    } catch (emailError: any) {
-      console.error('Error sending email:', emailError);
-      // Don't fail the request if email fails - code is still stored in Firestore
-      // User can still verify manually if needed
     }
 
     return NextResponse.json({ 
