@@ -352,10 +352,10 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
               <input
                 type="text"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))}
                 required
                 className="auth-form__input"
-                placeholder="Enter 4-digit code"
+                placeholder="Enter 4-character code"
                 maxLength={4}
                 disabled={!!loading}
                 autoFocus

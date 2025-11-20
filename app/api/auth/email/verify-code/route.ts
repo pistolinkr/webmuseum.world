@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (codeData.code !== code) {
+    // Compare codes case-insensitively
+    if (codeData.code.toUpperCase() !== code.toUpperCase()) {
       return NextResponse.json(
         { error: 'Invalid code' },
         { status: 400 }
