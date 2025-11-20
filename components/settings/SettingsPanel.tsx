@@ -36,24 +36,25 @@ export default function SettingsPanel() {
   });
 
   useEffect(() => {
-    if (userData?.settings) {
+    const userSettings = userData?.settings;
+    if (userSettings) {
       setSettings({
         notifications: {
           email: true,
           exhibitionComments: true,
           newFollowers: true,
           exhibitionUpdates: true,
-          ...userData.settings.notifications,
+          ...(userSettings.notifications ?? {}),
         },
         privacy: {
           profileVisibility: 'public',
           defaultExhibitionVisibility: 'public',
           showEmail: false,
           showLocation: true,
-          ...userData.settings.privacy,
+          ...(userSettings.privacy ?? {}),
         },
-        theme: userData.settings.theme || 'system',
-        language: userData.settings.language || 'en',
+        theme: userSettings.theme || 'system',
+        language: userSettings.language || 'en',
       });
     }
   }, [userData]);
@@ -101,24 +102,25 @@ export default function SettingsPanel() {
 
   // Sync settings with userData when it loads
   useEffect(() => {
-    if (userData?.settings) {
+    const userSettings = userData?.settings;
+    if (userSettings) {
       setSettings(prev => ({
         notifications: {
           email: true,
           exhibitionComments: true,
           newFollowers: true,
           exhibitionUpdates: true,
-          ...userData.settings.notifications,
+          ...(userSettings.notifications ?? {}),
         },
         privacy: {
           profileVisibility: 'public',
           defaultExhibitionVisibility: 'public',
           showEmail: false,
           showLocation: true,
-          ...userData.settings.privacy,
+          ...(userSettings.privacy ?? {}),
         },
-        theme: userData.settings.theme || getInitialTheme(),
-        language: userData.settings.language || 'en',
+        theme: userSettings.theme || getInitialTheme(),
+        language: userSettings.language || 'en',
       }));
     }
   }, [userData]);
