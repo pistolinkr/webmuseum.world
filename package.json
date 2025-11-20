@@ -22,7 +22,7 @@
     "react-dom": "^18.2.0",
     "tailwind-merge": "^3.4.0",
     "three": "^0.160.0",
-    "vercel": "^48.10.4"
+    "vercel": "^41.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

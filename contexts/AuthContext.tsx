@@ -18,7 +18,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions as cloudFunctions } from '@/lib/firebase';
 import { User } from '@/types';
 import { getUser, createUser, updateUser } from '@/lib/firestore';
 import { registerPasskey as registerPasskeyWebAuthn, authenticateWithPasskey, isWebAuthnSupported } from '@/lib/webauthn';
@@ -502,15 +503,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Send email verification code
   const sendEmailCode = async (email: string) => {
-    const response = await fetch('/api/auth/email/send-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to send verification code');
+    if (!cloudFunctions) {
+      throw new Error('Firebase Functions is not initialized');
+    }
+    const callable = httpsCallable(cloudFunctions, 'sendVerificationCode');
+    const result = await callable({ email: email.toLowerCase().trim() });
+    const data = result.data as { success?: boolean };
+    if (!data?.success) {
+      throw new Error('Failed to send verification code');
     }
   };
 
@@ -520,16 +520,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error('Firebase Auth is not initialized');
     }
 
-    // First verify the code
-    const verifyResponse = await fetch('/api/auth/email/verify-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code }),
-    });
+    if (!cloudFunctions) {
+      throw new Error('Firebase Functions is not initialized');
+    }
 
-    if (!verifyResponse.ok) {
-      const error = await verifyResponse.json();
-      throw new Error(error.error || 'Failed to verify code');
+    // First verify the code via Cloud Function
+    try {
+      const verifyCallable = httpsCallable(cloudFunctions, 'verifyEmailCode');
+      const verifyResult = await verifyCallable({ email: email.toLowerCase().trim(), code: code.toUpperCase().trim() });
+      const verifyData = verifyResult.data as { success?: boolean };
+      if (!verifyData?.success) {
+        throw new Error('Failed to verify code');
+      }
+    } catch (error: any) {
+      const message = error?.message || 'Failed to verify code';
+      throw new Error(message);
     }
 
     // Code is verified, now create account

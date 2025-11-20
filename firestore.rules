@@ -78,6 +78,11 @@ service cloud.firestore {
       // Only the owner can delete their artwork
       allow delete: if isOwner(resource.data.userId);
     }
+
+    // Email verification codes - deny direct client access
+    match /emailVerificationCodes/{docId} {
+      allow read, write: if false;
+    }
   }
 }
 

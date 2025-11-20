@@ -55,7 +55,7 @@
     --notion-black: #ffffff;
     
     /* Navbar background color for dark theme */
-    --navbar-bg: #000000;
+    --navbar-bg: #020202;
   }
 }
 
@@ -75,7 +75,7 @@
   --notion-black: #ffffff;
   
   /* Navbar background color for dark theme */
-  --navbar-bg: #000000;
+  --navbar-bg: #020202;
 }
 
 /* Manual light theme override */
@@ -996,6 +996,53 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   left: 0;
   font-size: 0.7rem;
   margin-bottom: 0;
+}
+
+.auth-form__code-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.auth-form__code-message {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.auth-form__resend-button {
+  display: inline-flex;
+  margin-left: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.auth-form__resend-button:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.auth-form__resend-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-form__code-success {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.auth-form__code-error {
+  color: #ef4444;
+  font-weight: 600;
 }
 
 .auth-form__checkbox-label {

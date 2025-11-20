@@ -8,15 +8,16 @@ interface SocialSignUpFormProps {
   onSwitchToLogin?: () => void;
 }
 
-type EmailStep = 'initial' | 'email-input' | 'code-input';
+type EmailStep = 'idle' | 'enterEmail' | 'enterCode' | 'verified';
 
 export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialSignUpFormProps) {
   const { signInWithGoogle, signInWithMicrosoft, signInWithApple, signInWithGitHub, sendEmailCode, signUpWithEmailCode } = useAuth();
   const [error, setError] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState<'google' | 'microsoft' | 'apple' | 'github' | 'email' | 'apply' | 'signup' | null>(null);
+  const [loading, setLoading] = useState<'google' | 'microsoft' | 'apple' | 'github' | 'apply' | 'signup' | 'resend' | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [emailStep, setEmailStep] = useState<EmailStep>('initial');
+  const [emailStep, setEmailStep] = useState<EmailStep>('idle');
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'sent' | 'verified' | 'error'>('idle');
 
   const handleGoogleSignUp = async () => {
     setError((prev) => ({ ...prev, google: false }));
@@ -158,7 +159,10 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
 
   const handleContinueWithEmail = () => {
     setError({});
-    setEmailStep('email-input');
+    setEmailStep('enterEmail');
+    setVerificationStatus('idle');
+    setEmail('');
+    setCode('');
   };
 
   const handleApply = async (e: React.FormEvent) => {
@@ -167,10 +171,14 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
     setLoading('apply');
     
     try {
-      await sendEmailCode(email);
-      setEmailStep('code-input');
+      const normalizedEmail = email.trim().toLowerCase();
+      setEmail(normalizedEmail);
+      await sendEmailCode(normalizedEmail);
+      setEmailStep('enterCode');
+      setVerificationStatus('sent');
     } catch (err: any) {
       setError((prev) => ({ ...prev, apply: true }));
+      setVerificationStatus('error');
       setTimeout(() => {
         setError((prev) => ({ ...prev, apply: false }));
       }, 5000);
@@ -185,13 +193,31 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
     setLoading('signup');
     
     try {
-      await signUpWithEmailCode(email, code);
+      const normalizedEmail = email.trim().toLowerCase();
+      await signUpWithEmailCode(normalizedEmail, code);
+      setVerificationStatus('verified');
+      setEmailStep('verified');
       onSuccess?.();
     } catch (err: any) {
       setError((prev) => ({ ...prev, signup: true }));
+      setVerificationStatus('error');
       setTimeout(() => {
         setError((prev) => ({ ...prev, signup: false }));
       }, 5000);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setError((prev) => ({ ...prev, apply: false }));
+    setLoading('resend');
+    try {
+      await sendEmailCode(email);
+      setVerificationStatus('sent');
+    } catch (err: any) {
+      setError((prev) => ({ ...prev, apply: true }));
+      setVerificationStatus('error');
     } finally {
       setLoading(null);
     }
@@ -299,7 +325,7 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
             : 'Continue with Apple'}
         </button>
 
-        {emailStep === 'initial' && (
+        {emailStep === 'idle' && (
           <button
             type="button"
             onClick={handleContinueWithEmail}
@@ -315,7 +341,7 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
         )}
 
         {/* Email section */}
-        {emailStep === 'email-input' && (
+        {(emailStep === 'enterEmail' || emailStep === 'enterCode' || emailStep === 'verified') && (
           <form onSubmit={handleApply} className="auth-form__email-row">
             <div className="auth-form__field" style={{ flex: 1 }}>
               <input
@@ -325,15 +351,15 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
                 required
                 className="auth-form__input"
                 placeholder="your@email.com"
-                disabled={!!loading}
-                autoFocus
+                disabled={!!loading || emailStep !== 'enterEmail'}
+                autoFocus={emailStep === 'enterEmail'}
               />
             </div>
             <button
               type="submit"
-              disabled={!!loading}
+              disabled={!!loading || emailStep !== 'enterEmail'}
               className={`auth-form__email-icon-button ${error.apply ? 'auth-form__email-icon-button--error' : ''}`}
-              title={error.apply ? 'Authentication Failed, please try again.' : loading === 'apply' ? 'Sending...' : 'Apply'}
+              title={error.apply ? 'Authentication Failed, please try again.' : loading === 'apply' ? 'Sending...' : 'Send Code'}
             >
               <svg className="auth-form__social-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -343,36 +369,59 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
           </form>
         )}
 
-        {emailStep === 'code-input' && (
-          <form onSubmit={handleSignUp} className="auth-form__email-row">
-            <div className="auth-form__field" style={{ flex: 1, position: 'relative' }}>
-              <p className="auth-form__code-hint">
-                Code sent to <strong>{email}</strong>
-              </p>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))}
-                required
-                className="auth-form__input"
-                placeholder="Enter 4-character code"
-                maxLength={4}
-                disabled={!!loading}
-                autoFocus
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!!loading || code.length !== 4}
-              className={`auth-form__email-icon-button ${error.signup ? 'auth-form__email-icon-button--error' : ''}`}
-              title={error.signup ? 'Authentication Failed, please try again.' : loading === 'signup' ? 'Signing up...' : 'Sign up'}
-            >
-              <svg className="auth-form__social-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
-            </button>
-          </form>
+        {(emailStep === 'enterCode' || emailStep === 'verified') && (
+          <div className="auth-form__code-stack">
+            <form onSubmit={handleSignUp} className="auth-form__email-row">
+              <div className="auth-form__field" style={{ flex: 1, position: 'relative' }}>
+                <p className="auth-form__code-hint">
+                  {verificationStatus === 'sent' && (
+                    <>Code sent to <strong>{email}</strong></>
+                  )}
+                  {verificationStatus === 'verified' && (
+                    <span className="auth-form__code-success">Verification successful! Redirecting...</span>
+                  )}
+                  {verificationStatus === 'error' && (
+                    <span className="auth-form__code-error">Verification failed. Please try again.</span>
+                  )}
+                </p>
+                <input
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))}
+                  required
+                  className="auth-form__input"
+                  placeholder="Verification Code"
+                  maxLength={4}
+                  disabled={!!loading || emailStep === 'verified'}
+                  autoFocus={emailStep === 'enterCode'}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!!loading || code.length !== 4 || emailStep === 'verified'}
+                className={`auth-form__email-icon-button ${error.signup ? 'auth-form__email-icon-button--error' : ''}`}
+                title={error.signup ? 'Authentication Failed, please try again.' : loading === 'signup' ? 'Signing up...' : 'Sign up'}
+              >
+                <svg className="auth-form__social-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </button>
+            </form>
+            <p className="auth-form__code-message">
+              We send a verification code with your email, please check and fill with it.
+              {(emailStep === 'enterCode' || verificationStatus === 'error') && (
+                <button
+                  type="button"
+                  className="auth-form__resend-button"
+                  onClick={handleResendCode}
+                  disabled={!!loading}
+                >
+                  {loading === 'resend' ? 'Sending...' : 'Resend code'}
+                </button>
+              )}
+            </p>
+          </div>
         )}
       </div>
     </div>

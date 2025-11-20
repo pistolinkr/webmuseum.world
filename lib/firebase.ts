@@ -4,6 +4,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getAuth, Auth } from 'firebase/auth';
+import { getFunctions, Functions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -28,6 +29,7 @@ let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
 let auth: Auth | undefined;
+let functionsInstance: Functions | undefined;
 
 if (isFirebaseConfigured) {
   try {
@@ -48,6 +50,7 @@ if (isFirebaseConfigured) {
       db = getFirestore(app);
       storage = getStorage(app);
       auth = getAuth(app);
+      functionsInstance = getFunctions(app, process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION || undefined);
       
       // Enable offline persistence for Firestore (client-side only)
       enableIndexedDbPersistence(db)
@@ -104,7 +107,7 @@ if (isFirebaseConfigured) {
   console.warn('⚠️ Firebase: Falling back to mock data');
 }
 
-export { app, db, storage, auth };
+export { app, db, storage, auth, functionsInstance as functions };
 
 
 
