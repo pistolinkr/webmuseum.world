@@ -11,28 +11,42 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    // Helper function to check if exhibition is public or user owns it
+    function canReadExhibition(exhibitionId) {
+      let exhibition = get(/databases/$(database)/documents/exhibitions/$(exhibitionId));
+      return exhibition.data.isPublic == true || isOwner(exhibition.data.userId);
+    }
+    
     // Users collection
     match /users/{userId} {
-      // Users can read any public user profile
+      // Anyone can read user profiles (public information)
       allow read: if true;
       
       // Users can only create/update their own profile
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      // Users cannot delete their own profile (for data integrity)
+      allow delete: if false;
     }
     
     // Exhibitions collection
     match /exhibitions/{exhibitionId} {
-      // Anyone can read public exhibitions
-      allow read: if resource.data.isPublic == true || isOwner(resource.data.userId);
+      // Anyone can read public exhibitions, or owners can read their own exhibitions
+      allow read: if resource == null || 
+                     resource.data.isPublic == true || 
+                     isOwner(resource.data.userId);
       
       // Only authenticated users can create exhibitions
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Must set userId to their own ID
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.id == exhibitionId;
       
       // Only the owner can update their exhibition
+      // Cannot change userId
       allow update: if isOwner(resource.data.userId) && 
-                       request.resource.data.userId == resource.data.userId;
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.id == exhibitionId;
       
       // Only the owner can delete their exhibition
       allow delete: if isOwner(resource.data.userId);
@@ -40,18 +54,26 @@ service cloud.firestore {
     
     // Artworks collection
     match /artworks/{artworkId} {
-      // Anyone can read artworks from public exhibitions
-      // For now, allow read if the artwork belongs to a public exhibition
-      // Note: This is a simplified check. In production, you might want to verify
-      // the exhibition's isPublic status by checking the exhibitions collection
-      allow read: if true;
+      // Anyone can read artworks if they belong to a public exhibition
+      // Or if the user owns the artwork
+      allow read: if resource == null ||
+                     resource.data.exhibitionId == null ||
+                     canReadExhibition(resource.data.exhibitionId) ||
+                     isOwner(resource.data.userId);
       
       // Only authenticated users can create artworks
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Must set userId to their own ID and exhibitionId must exist
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.exhibitionId != null &&
+                       request.resource.data.id == artworkId;
       
       // Only the owner can update their artwork
+      // Cannot change userId or exhibitionId
       allow update: if isOwner(resource.data.userId) && 
-                       request.resource.data.userId == resource.data.userId;
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.exhibitionId == resource.data.exhibitionId &&
+                       request.resource.data.id == artworkId;
       
       // Only the owner can delete their artwork
       allow delete: if isOwner(resource.data.userId);

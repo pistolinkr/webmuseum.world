@@ -20,7 +20,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "three": "^0.160.0",
-    "vercel": "^48.10.2"
+    "vercel": "^41.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

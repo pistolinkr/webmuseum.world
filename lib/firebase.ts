@@ -78,7 +78,9 @@ if (isFirebaseConfigured) {
         app = getApps()[0];
         console.log('✅ Firebase: Using existing app instance (server)');
       }
-      db = getFirestore(app);
+      if (app) {
+        db = getFirestore(app);
+      }
       // Storage and Auth are client-side only
     }
   } catch (error: any) {

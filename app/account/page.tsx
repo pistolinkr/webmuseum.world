@@ -9,7 +9,7 @@ import { Exhibition, User } from '@/types';
 import ExhibitionForm from '@/components/exhibition/ExhibitionForm';
 import ExhibitionDeleteModal from '@/components/exhibition/ExhibitionDeleteModal';
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
-import PasskeyManager from '@/components/auth/PasskeyManager';
+import SettingsPanel from '@/components/settings/SettingsPanel';
 import { uploadToFirebaseStorage, getUserProfilePicturePath, getUserCoverImagePath } from '@/lib/firebaseStorage';
 import { GlowingStarsBackground } from '@/components/ui/glowing-stars';
 
@@ -47,14 +47,23 @@ export default function UserAccountPage() {
     }
   }, []); // Run once on mount
 
+  // Track if redirect is in progress to prevent multiple redirects
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   // Load exhibitions in background after auth is ready
   useEffect(() => {
     if (authLoading) return;
+    if (isRedirecting) return; // Prevent multiple redirects
 
-    if (!currentUser) {
-      router.push('/');
-      return;
-    }
+    // Wait a bit to ensure auth state is fully initialized
+    const checkAuth = setTimeout(() => {
+      if (!currentUser && !authLoading) {
+        console.log('No current user, redirecting to home');
+        setIsRedirecting(true);
+        // Use replace instead of push to avoid adding to history
+        router.replace('/');
+      }
+    }, 100);
 
     // Load exhibitions in background (non-blocking)
     // UI will render immediately without waiting for exhibitions
@@ -69,8 +78,14 @@ export default function UserAccountPage() {
       }
     }
     
-    loadExhibitions();
-  }, [currentUser, authLoading, router]);
+    if (currentUser) {
+      loadExhibitions();
+    }
+
+    return () => {
+      clearTimeout(checkAuth);
+    };
+  }, [currentUser, authLoading, router, isRedirecting]);
 
   const toggleBookmark = (exhibitionId: string) => {
     const newBookmarks = bookmarkedExhibitions.includes(exhibitionId)
@@ -325,14 +340,16 @@ export default function UserAccountPage() {
     }
   }, [userData, editingProfile]);
 
-  // Show loading only while auth is initializing
-  if (authLoading) {
+  // Show loading only while auth is initializing or redirecting
+  if (authLoading || isRedirecting) {
     return <div className="account-page__loading">Loading...</div>;
   }
 
-  // Redirect if not authenticated (handled in useEffect, but show nothing while redirecting)
+  // Show loading while checking auth (give it a moment for auth to initialize)
   if (!currentUser) {
-    return null;
+    // Wait a bit before showing nothing (redirect is handled in useEffect)
+    // Don't render anything that might cause errors during redirect
+    return <div className="account-page__loading">Loading...</div>;
   }
 
   return (
@@ -408,9 +425,14 @@ export default function UserAccountPage() {
               <label className={`account-page__avatar-label ${editingProfile ? 'account-page__avatar-label--editable' : ''}`}>
                 {(editingProfile ? editFormData.avatarUrl : userData?.avatarUrl) ? (
                   <img
-                    src={editingProfile ? editFormData.avatarUrl : userData?.avatarUrl}
-                    alt={userData?.displayName || userData?.name || 'Profile'}
+                    src={editingProfile ? editFormData.avatarUrl : (userData?.avatarUrl || '')}
+                    alt={userData?.displayName || userData?.name || currentUser?.email || 'Profile'}
                     className="account-page__profile-avatar"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
                   />
                 ) : (
                   <div 
@@ -502,7 +524,7 @@ export default function UserAccountPage() {
                   ) : (
                     <>
                       <h1 className="account-page__profile-name">
-                        {userData?.displayName || userData?.name || currentUser?.email}
+                        {userData?.displayName || userData?.name || currentUser?.email || 'User'}
                       </h1>
                       {userData?.username && (
                         <p className="account-page__profile-username">@{userData.username}</p>
@@ -545,16 +567,16 @@ export default function UserAccountPage() {
                       rows={3}
                     />
                   ) : (
-                    userData.bio && (
+                    userData?.bio && (
                       <p className="account-page__profile-bio">{userData.bio}</p>
                     )
                   )}
                   {!editingProfile && (
                     <div className="account-page__profile-meta">
-                      {userData.location && (
+                      {userData?.location && (
                         <span className="account-page__profile-location">📍 {userData.location}</span>
                       )}
-                      {userData.category && (
+                      {userData?.category && (
                         <span className="account-page__profile-category">{userData.category}</span>
                       )}
                     {currentUser && (
@@ -760,8 +782,7 @@ export default function UserAccountPage() {
           {activeTab === 'settings' && (
             <div className="account-page__tab-content">
               <div className="account-page__settings">
-                <h2 className="account-page__section-title">Security</h2>
-                <PasskeyManager />
+                <SettingsPanel />
                 
                 <div className="account-page__settings-section">
                   <h3 className="account-page__settings-subtitle">Account</h3>

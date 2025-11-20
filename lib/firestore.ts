@@ -355,12 +355,26 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
     const firestoreDb = ensureDb();
     const docRef = doc(firestoreDb, USERS_COLLECTION, userId);
     
+    // Filter out undefined values - Firestore doesn't allow undefined
+    const cleanUpdates: Record<string, any> = {};
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) {
+        cleanUpdates[key] = value;
+      }
+    }
+    
+    // If no valid updates, return early
+    if (Object.keys(cleanUpdates).length === 0) {
+      console.log('⚠️ Firebase: No valid updates to apply (all values are undefined)');
+      return true;
+    }
+    
     // Try to update first - if document doesn't exist, updateDoc will fail
     // In that case, we'll catch and use setDoc instead
     try {
       // Try updateDoc first (works for existing documents and queues offline)
       await updateDoc(docRef, {
-        ...updates,
+        ...cleanUpdates,
         updatedAt: Timestamp.now(),
       });
       console.log('✅ Firebase: User updated successfully');
@@ -372,7 +386,7 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
         // Use setDoc with merge to avoid overwriting if document exists
         await setDoc(docRef, {
           id: userId,
-          ...updates,
+          ...cleanUpdates,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         }, { merge: true });

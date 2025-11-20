@@ -7,7 +7,7 @@ import ExhibitionCard from '@/components/explore/ExhibitionCard';
 import ExhibitionFilters from '@/components/explore/ExhibitionFilters';
 import { getUser } from '@/lib/firestore';
 
-export default function ExhibitionsPage() {
+export default function DiscoverPage() {
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({});
@@ -59,9 +59,17 @@ export default function ExhibitionsPage() {
       // Search query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        if (!ex.title.toLowerCase().includes(query) &&
-            !ex.description.toLowerCase().includes(query) &&
-            !ex.curator?.toLowerCase().includes(query)) {
+        const titleMatch = ex.title.toLowerCase().includes(query);
+        const descriptionMatch = ex.description.toLowerCase().includes(query);
+        const curatorMatch = ex.curator?.toLowerCase().includes(query);
+        const genreMatch = ex.genre?.some(g => g.toLowerCase().includes(query));
+        const tagsMatch = ex.tags?.some(t => t.toLowerCase().includes(query));
+        const artistMatch = ex.artworks?.some(artwork => 
+          artwork.artist?.toLowerCase().includes(query) ||
+          artwork.title?.toLowerCase().includes(query)
+        );
+        
+        if (!titleMatch && !descriptionMatch && !curatorMatch && !genreMatch && !tagsMatch && !artistMatch) {
           return false;
         }
       }
@@ -145,9 +153,9 @@ export default function ExhibitionsPage() {
       <div className="exhibitions-page__container">
         <div className="exhibitions-page__header">
           <div>
-            <h1 className="exhibitions-page__title">Discover Museums</h1>
+            <h1 className="exhibitions-page__title">Discover</h1>
             <p className="exhibitions-page__subtitle">
-              Explore user-created museums from around the world
+              Explore exhibitions and discover amazing artworks from artists around the world
             </p>
           </div>
         </div>
@@ -155,7 +163,7 @@ export default function ExhibitionsPage() {
         <div className="exhibitions-page__search">
           <input
             type="text"
-            placeholder="Search museums by title, description, or curator..."
+            placeholder="Search exhibitions by title, description, curator, or artist..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="exhibitions-page__search-input"
@@ -174,7 +182,7 @@ export default function ExhibitionsPage() {
 
         <div className="exhibitions-page__results">
           <p className="exhibitions-page__results-count">
-            {filteredExhibitions.length} museum{filteredExhibitions.length !== 1 ? 's' : ''} found
+            {filteredExhibitions.length} exhibition{filteredExhibitions.length !== 1 ? 's' : ''} found
           </p>
           {filteredExhibitions.length > 0 ? (
             <div className="exhibitions-page__grid">
@@ -188,7 +196,7 @@ export default function ExhibitionsPage() {
             </div>
           ) : (
             <div className="exhibitions-page__empty">
-              <p>No museums found matching your criteria.</p>
+              <p>No exhibitions found matching your criteria.</p>
               <button
                 onClick={() => {
                   setSearchQuery('');

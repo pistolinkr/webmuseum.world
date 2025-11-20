@@ -93,16 +93,6 @@ function LoginContent() {
         </Suspense>
         <div className="auth-page__content">
           <div className="auth-page__header">
-            <Link href="/" className="auth-page__logo">
-              <Image
-                src="/icon-white.png"
-                alt="Web Museum"
-                width={24}
-                height={24}
-                priority
-              />
-              <span className="auth-page__logo-text">Web Museum</span>
-            </Link>
             <h1 className="auth-page__title">Sign In</h1>
             <p className="auth-page__subtitle">
               Sign in with your social account to continue building your museum.

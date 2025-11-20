@@ -36,6 +36,9 @@ export function Vortex({
   const animationFrameRef = useRef<number>();
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
@@ -44,13 +47,21 @@ export function Vortex({
     if (!ctx) return;
 
     const resizeCanvas = () => {
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      try {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      } catch (e) {
+        console.warn('Error resizing canvas:', e);
+      }
     };
 
     resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    
+    // Safely add resize listener
+    if (typeof window !== 'undefined') {
+      window.addEventListener("resize", resizeCanvas);
+    }
 
     const particles: Array<{
       x: number;
@@ -135,9 +146,13 @@ export function Vortex({
     animate();
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      // Safely cleanup
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("resize", resizeCanvas);
+      }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
       }
     };
   }, [

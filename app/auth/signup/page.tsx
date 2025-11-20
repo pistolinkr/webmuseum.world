@@ -50,16 +50,6 @@ function SignUpContent() {
       <div className="auth-page__container">
         <div className="auth-page__content">
           <div className="auth-page__header">
-            <Link href="/" className="auth-page__logo">
-              <Image
-                src="/icon-white.png"
-                alt="Web Museum"
-                width={24}
-                height={24}
-                priority
-              />
-              <span className="auth-page__logo-text">Web Museum</span>
-            </Link>
             <h1 className="auth-page__title">Create Account</h1>
             <p className="auth-page__subtitle">
               Start building your virtual museum today.

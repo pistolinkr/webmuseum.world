@@ -51,6 +51,7 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
 
   const handleDelete = async () => {
     if (!deletingArtwork || !currentUser) return;
+    if (typeof window === 'undefined') return;
 
     const confirmed = window.confirm(
       `Are you sure you want to delete "${deletingArtwork.title}"? This action cannot be undone.`

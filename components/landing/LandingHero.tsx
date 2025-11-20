@@ -1,37 +1,55 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import SmoothCorner from '@/components/ui/SmoothCorner';
 import { TextEffect } from '@/components/core/text-effect';
 import { GlowingStarsBackground } from '@/components/ui/glowing-stars';
 import { TextLoop } from '@/components/core/text-loop';
+import ShimmerButton from '@/components/registry/magicui/shimmer-button';
 
 export default function LandingHero() {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const handleScroll = () => {
-      if (sectionRef.current) {
-        const rect = sectionRef.current.getBoundingClientRect();
-        const sectionTop = rect.top + window.scrollY;
-        const currentScroll = window.scrollY;
-        
-        // 섹션의 시작 위치를 기준으로 스크롤 거리 계산
-        const scrollDistance = Math.max(0, currentScroll - sectionTop);
-        setScrollY(scrollDistance);
-      } else {
-        setScrollY(window.scrollY);
+      try {
+        if (sectionRef.current) {
+          const rect = sectionRef.current.getBoundingClientRect();
+          const sectionTop = rect.top + window.scrollY;
+          const currentScroll = window.scrollY;
+          
+          // 섹션의 시작 위치를 기준으로 스크롤 거리 계산
+          const scrollDistance = Math.max(0, currentScroll - sectionTop);
+          setScrollY(scrollDistance);
+        } else {
+          setScrollY(window.scrollY);
+        }
+      } catch (e) {
+        console.warn('Error handling scroll:', e);
       }
     };
 
     handleScroll(); // 초기값 설정
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Safely add scroll listener
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      // Safely cleanup
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, []);
 
   // 스크롤 속도를 80%로 설정 (0.8)
@@ -148,11 +166,14 @@ export default function LandingHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeInOut', delay: 0.3 }}
         >
-          <SmoothCorner radius={16}>
-            <Link href="/exhibition" className="landing-hero__cta">
+          <ShimmerButton 
+            className="shadow-2xl"
+            onClick={() => router.push('/discover')}
+          >
+            <span className="text-center text-sm leading-none font-medium tracking-tight whitespace-pre-wrap text-white lg:text-lg dark:from-white dark:to-slate-900/10">
               Explore exhibitions
-            </Link>
-          </SmoothCorner>
+            </span>
+          </ShimmerButton>
         </motion.div>
       </div>
     </section>

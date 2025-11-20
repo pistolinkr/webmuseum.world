@@ -59,19 +59,34 @@ const CardPattern = ({ mouseEnter }: { mouseEnter: boolean }) => {
   const [starPositions, setStarPositions] = useState<Array<{ x: number; y: number; opacity: number }>>([]);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
     if (!containerRef.current) return;
 
     const updateDimensions = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: rect.height });
+      try {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          setDimensions({ width: rect.width, height: rect.height });
+        }
+      } catch (e) {
+        console.warn('Error updating dimensions:', e);
       }
     };
 
     updateDimensions();
-    window.addEventListener("resize", updateDimensions);
+    
+    // Safely add resize listener
+    if (typeof window !== 'undefined') {
+      window.addEventListener("resize", updateDimensions);
+    }
 
-    return () => window.removeEventListener("resize", updateDimensions);
+    return () => {
+      // Safely cleanup
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("resize", updateDimensions);
+      }
+    };
   }, []);
 
   useEffect(() => {

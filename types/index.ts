@@ -79,6 +79,28 @@ export interface User {
   purchasedItems?: string[];
   createdExhibitions?: string[]; // IDs of exhibitions created by this user
   createdArtworks?: string[]; // IDs of artworks created by this user
+  settings?: {
+    notifications?: {
+      email?: boolean;
+      exhibitionComments?: boolean;
+      newFollowers?: boolean;
+      exhibitionUpdates?: boolean;
+    };
+    privacy?: {
+      profileVisibility?: 'public' | 'private';
+      defaultExhibitionVisibility?: 'public' | 'private';
+      showEmail?: boolean;
+      showLocation?: boolean;
+    };
+    theme?: 'light' | 'dark' | 'system';
+    language?: string;
+  };
+  connectedAccounts?: {
+    google?: boolean;
+    github?: boolean;
+    microsoft?: boolean;
+    apple?: boolean;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }

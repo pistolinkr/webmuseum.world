@@ -14,6 +14,7 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
   const [loading, setLoading] = useState<'google' | 'microsoft' | 'apple' | 'github' | 'email' | null>(null);
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setError((prev) => ({ ...prev, google: false }));
@@ -162,6 +163,7 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
     try {
       await sendMagicLink(email);
       setEmailSent(true);
+      setIsEmailOpen(false);
     } catch (err: any) {
       setError((prev) => ({ ...prev, email: true }));
       setTimeout(() => {
@@ -186,6 +188,7 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
             onClick={() => {
               setEmailSent(false);
               setEmail('');
+              setIsEmailOpen(true);
             }}
             className="auth-form__button auth-form__button--secondary"
           >
@@ -295,34 +298,51 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
             : 'Continue with Apple'}
         </button>
 
-        <form onSubmit={handleEmailSignIn} className="auth-form__email-form">
-          <div className="auth-form__field">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="auth-form__input"
-              placeholder="your@email.com"
-              disabled={!!loading}
-            />
-          </div>
+        {!isEmailOpen && (
           <button
-            type="submit"
+            type="button"
+            onClick={() => {
+              setError((prev) => ({ ...prev, email: false }));
+              setIsEmailOpen(true);
+            }}
             disabled={!!loading}
-            className={`auth-form__social-button ${error.email ? 'auth-form__social-button--error' : ''}`}
+            className="auth-form__social-button"
           >
             <svg className="auth-form__social-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
-            {error.email 
-              ? 'Authentication Failed, please try again.' 
-              : loading === 'email' 
-              ? 'Sending...' 
-              : 'Continue with Email'}
+            Continue with Email
           </button>
-        </form>
+        )}
+
+        {isEmailOpen && (
+          <form onSubmit={handleEmailSignIn} className="auth-form__email-row">
+            <div className="auth-form__field" style={{ flex: 1 }}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="auth-form__input"
+                placeholder="your@email.com"
+                disabled={!!loading}
+                autoFocus
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!!loading}
+              className={`auth-form__email-icon-button ${error.email ? 'auth-form__email-icon-button--error' : ''}`}
+              title={error.email ? 'Authentication Failed, please try again.' : loading === 'email' ? 'Sending...' : 'Send magic link'}
+            >
+              <svg className="auth-form__social-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

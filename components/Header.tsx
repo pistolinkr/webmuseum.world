@@ -5,16 +5,50 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 export default function Header() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false); // Always start with false for SSR consistency
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mark as mounted to avoid hydration mismatch
+    setMounted(true);
+    
+    const getTheme = () => {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'light') return false;
+      if (theme === 'dark') return true;
+      // System theme
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
+
+    setIsDarkMode(getTheme());
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches);
+    const handleChange = () => {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'system' || !theme) {
+        setIsDarkMode(mediaQuery.matches);
+      }
+    };
 
-    const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    // Listen for theme changes from settings
+    const handleStorageChange = () => {
+      setIsDarkMode(getTheme());
+    };
+
     mediaQuery.addEventListener('change', handleChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom theme change event
+    const handleThemeChange = () => {
+      setIsDarkMode(getTheme());
+    };
+    window.addEventListener('themechange', handleThemeChange);
 
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themechange', handleThemeChange);
+    };
   }, []);
 
   return (
@@ -38,12 +72,14 @@ export default function Header() {
     >
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
         <Image
-          src={isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
+          src={mounted && isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
           alt="Web Museum"
           width={24}
           height={24}
           style={{ objectFit: 'contain' }}
           priority
+          key={mounted && isDarkMode ? 'dark-theme' : 'light-theme'}
+          suppressHydrationWarning
         />
         <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>
           Web Museum

@@ -47,64 +47,106 @@ export function TextLoop({
     },
   },
 }: TextLoopProps) {
+  // Ensure children is always an array and has valid length
+  const validChildren = Array.isArray(children) && children.length > 0 ? children : [];
+  const safeChildren = validChildren.length > 0 ? validChildren : [''];
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLSpanElement>(null);
   const [maxWidth, setMaxWidth] = useState<number | undefined>(undefined);
+  
+  // Ensure currentIndex is always within bounds
+  const safeCurrentIndex = Math.max(0, Math.min(currentIndex, safeChildren.length - 1));
 
   // Calculate max width of all children to prevent layout shift
   useEffect(() => {
-    if (!containerRef.current || children.length <= 1) return;
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    if (!containerRef.current || safeChildren.length <= 1) {
+      setMaxWidth(undefined);
+      return;
+    }
 
-    const tempContainer = document.createElement('span');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.visibility = 'hidden';
-    tempContainer.style.whiteSpace = 'nowrap';
-    tempContainer.style.fontSize = 'inherit';
-    tempContainer.style.fontWeight = 'inherit';
-    tempContainer.style.fontFamily = 'inherit';
-    tempContainer.className = className;
-    document.body.appendChild(tempContainer);
-
+    // Initialize max outside the if block to ensure it's always defined
     let max = 0;
-    children.forEach((child) => {
-      let text = '';
-      if (typeof child === 'string') {
-        text = child;
-      } else if (child && typeof child === 'object' && 'props' in child) {
-        const childProps = (child as any).props;
-        if (typeof childProps?.children === 'string') {
-          text = childProps.children;
-        } else if (React.isValidElement(child)) {
-          // Extract text from React element
-          const element = child as React.ReactElement;
-          if (typeof element.props?.children === 'string') {
-            text = element.props.children;
+
+    try {
+      const tempContainer = document.createElement('span');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.visibility = 'hidden';
+      tempContainer.style.whiteSpace = 'nowrap';
+      tempContainer.style.fontSize = 'inherit';
+      tempContainer.style.fontWeight = 'inherit';
+      tempContainer.style.fontFamily = 'inherit';
+      tempContainer.className = className;
+
+      // Only proceed if document.body is available
+      if (document.body) {
+        document.body.appendChild(tempContainer);
+
+        safeChildren.forEach((child) => {
+          let text = '';
+          if (typeof child === 'string') {
+            text = child;
+          } else if (child && typeof child === 'object' && 'props' in child) {
+            const childProps = (child as any).props;
+            if (typeof childProps?.children === 'string') {
+              text = childProps.children;
+            } else if (React.isValidElement(child)) {
+              // Extract text from React element
+              const element = child as React.ReactElement;
+              if (typeof element.props?.children === 'string') {
+                text = element.props.children;
+              }
+            }
           }
+          
+          if (text) {
+            tempContainer.textContent = text;
+            const width = tempContainer.offsetWidth;
+            if (width > max) max = width;
+          }
+        });
+
+        // Safely remove the temporary container
+        try {
+          if (tempContainer.parentNode && document.body.contains(tempContainer)) {
+            document.body.removeChild(tempContainer);
+          }
+        } catch (e) {
+          // Element may have been removed by React or other code
+          console.warn('Could not remove temp container:', e);
         }
       }
-      
-      if (text) {
-        tempContainer.textContent = text;
-        const width = tempContainer.offsetWidth;
-        if (width > max) max = width;
-      }
-    });
+    } catch (error) {
+      // If anything goes wrong, just set maxWidth to undefined
+      console.warn('Error calculating max width:', error);
+      max = 0;
+    }
 
-    document.body.removeChild(tempContainer);
+    // Set maxWidth only if max is greater than 0
     if (max > 0) {
       setMaxWidth(max);
+    } else {
+      setMaxWidth(undefined);
     }
-  }, [children, className]);
+  }, [safeChildren, className]);
 
   useEffect(() => {
-    if (children.length <= 1) return;
+    if (safeChildren.length <= 1) {
+      setCurrentIndex(0);
+      return;
+    }
 
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % children.length);
+      setCurrentIndex((prev) => {
+        const next = (prev + 1) % safeChildren.length;
+        return Math.max(0, Math.min(next, safeChildren.length - 1));
+      });
     }, interval);
 
     return () => clearInterval(timer);
-  }, [children.length, interval]);
+  }, [safeChildren.length, interval]);
 
   const defaultVariants = {
     initial: {
@@ -158,7 +200,7 @@ export function TextLoop({
             whiteSpace: 'nowrap',
           }}
         >
-          {children[currentIndex]}
+          {safeChildren[safeCurrentIndex]}
         </motion.span>
       </AnimatePresence>
     </span>

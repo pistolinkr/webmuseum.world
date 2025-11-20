@@ -4,38 +4,95 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { TextRoll } from '@/components/core/text-roll';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LandingHeader() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const pathname = usePathname();
+  const [isDarkMode, setIsDarkMode] = useState(false); // Always start with false for SSR consistency
+  const [mounted, setMounted] = useState(false);
   const [scrollOpacity, setScrollOpacity] = useState(0);
   const { currentUser, userData, signOut, loading } = useAuth();
 
   useEffect(() => {
+    // Mark as mounted to avoid hydration mismatch
+    setMounted(true);
+    
+    const getTheme = () => {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'light') return false;
+      if (theme === 'dark') return true;
+      // System theme
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
+
+    setIsDarkMode(getTheme());
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mediaQuery.matches);
+    const handleChange = () => {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'system' || !theme) {
+        setIsDarkMode(mediaQuery.matches);
+      }
+    };
 
-    const handleChange = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    // Listen for theme changes from settings
+    const handleStorageChange = () => {
+      setIsDarkMode(getTheme());
+    };
+
     mediaQuery.addEventListener('change', handleChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom theme change event
+    const handleThemeChange = () => {
+      setIsDarkMode(getTheme());
+    };
+    window.addEventListener('themechange', handleThemeChange);
 
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themechange', handleThemeChange);
+    };
   }, []);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const headerHeight = 64; // 4rem = 64px
     
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      // 스크롤이 헤더 높이만큼 내려가면 opacity가 0에서 1로 변경
-      const opacity = Math.min(scrollY / headerHeight, 1);
-      setScrollOpacity(opacity);
+      try {
+        const scrollY = window.scrollY;
+        // 스크롤이 헤더 높이만큼 내려가면 opacity가 0에서 1로 변경
+        const opacity = Math.min(scrollY / headerHeight, 1);
+        setScrollOpacity(opacity);
+        
+        // CSS 변수로 스크롤 opacity 전달
+        if (typeof document !== 'undefined') {
+          document.documentElement.style.setProperty('--header-scroll-opacity', opacity.toString());
+        }
+      } catch (e) {
+        console.warn('Error handling scroll:', e);
+      }
     };
 
     handleScroll(); // 초기값 설정
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Safely add scroll listener
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      // Safely cleanup
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, []);
 
   return (
@@ -50,37 +107,45 @@ export default function LandingHeader() {
         left: 0,
         right: 0,
         transform: 'none',
-        backgroundColor: isDarkMode 
-          ? `rgba(17, 17, 17, ${scrollOpacity * 0.8})`
-          : `rgba(255, 255, 255, ${scrollOpacity * 0.8})`,
-        borderBottomColor: isDarkMode
-          ? `rgba(229, 231, 235, ${scrollOpacity * 0.2})`
-          : `rgba(229, 231, 235, ${scrollOpacity})`,
       }}
     >
       <div className={`landing-header__container${!currentUser && !loading ? ' landing-header__container--guest' : ''}`}>
         <Link href="/" className="landing-header__logo" prefetch={true}>
           <Image
-            src={isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
+            src={mounted && isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
             alt="Web Museum"
             width={24}
             height={24}
             style={{ objectFit: 'contain' }}
             priority
             className="landing-header__logo-image"
+            key={mounted && isDarkMode ? 'dark-theme' : 'light-theme'}
+            suppressHydrationWarning
           />
           <TextRoll className="landing-header__logo-text" immediate>
             Web Museum
           </TextRoll>
         </Link>
         <nav className="landing-header__nav">
-          <Link href="/exhibition" className="landing-header__nav-link" prefetch={true}>
-            Exhibitions
+          <Link 
+            href="/discover" 
+            className={`landing-header__nav-link${pathname === '/discover' ? ' landing-header__nav-link--active' : ''}`}
+            prefetch={true}
+          >
+            Discover
           </Link>
-          <Link href="/artist" className="landing-header__nav-link" prefetch={true}>
+          <Link 
+            href="/artist" 
+            className={`landing-header__nav-link${pathname === '/artist' || pathname?.startsWith('/artist/') ? ' landing-header__nav-link--active' : ''}`}
+            prefetch={true}
+          >
             Artists
           </Link>
-          <Link href="/explore" className="landing-header__nav-link" prefetch={true}>
+          <Link 
+            href="/explore" 
+            className={`landing-header__nav-link${pathname === '/explore' ? ' landing-header__nav-link--active' : ''}`}
+            prefetch={true}
+          >
             Explore
           </Link>
         </nav>

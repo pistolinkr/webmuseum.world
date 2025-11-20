@@ -38,6 +38,9 @@ export function DottedGlowBackground({
   const animationFrameRef = useRef<number>();
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -48,23 +51,37 @@ export function DottedGlowBackground({
     if (!container) return;
 
     const resizeCanvas = () => {
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      try {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      } catch (e) {
+        console.warn('Error resizing canvas:', e);
+      }
     };
 
     resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    
+    // Safely add resize listener
+    if (typeof window !== 'undefined') {
+      window.addEventListener("resize", resizeCanvas);
+    }
 
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const colorVar = isDark ? colorDarkVar : colorLightVar;
     const glowColorVar = isDark ? glowColorDarkVar : glowColorLightVar;
 
     const getComputedColor = (varName: string) => {
-      const value = getComputedStyle(document.documentElement)
-        .getPropertyValue(varName)
-        .trim();
-      return value || "#6B7280";
+      try {
+        if (typeof document === 'undefined') return "#6B7280";
+        const value = getComputedStyle(document.documentElement)
+          .getPropertyValue(varName)
+          .trim();
+        return value || "#6B7280";
+      } catch (e) {
+        console.warn('Error getting computed color:', e);
+        return "#6B7280";
+      }
     };
 
     const color = getComputedColor(colorVar);
@@ -133,9 +150,13 @@ export function DottedGlowBackground({
     draw();
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      // Safely cleanup
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("resize", resizeCanvas);
+      }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
       }
     };
   }, [

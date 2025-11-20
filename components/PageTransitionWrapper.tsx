@@ -8,13 +8,19 @@ interface PageTransitionWrapperProps {
   children: React.ReactNode;
 }
 
+// 네비게이션 페이지들 (Discover, Artist, Explore)
+const NAV_PAGES = ['/discover', '/artist', '/explore'];
+
+// 네비게이션 페이지인지 확인
+function isNavPage(path: string): boolean {
+  return NAV_PAGES.includes(path) || path.startsWith('/artist/');
+}
+
 // 같은 전시 내 모드 전환인지 확인하는 함수
 function isSameExhibitionModeTransition(prevPath: string, currentPath: string): boolean {
-  // 전시 페이지 경로 패턴: /exhibition/[id]/[mode]
   const prevMatch = prevPath.match(/^\/exhibition\/([^/]+)\/(story|gallery|space)$/);
   const currentMatch = currentPath.match(/^\/exhibition\/([^/]+)\/(story|gallery|space)$/);
   
-  // 둘 다 전시 페이지이고 같은 전시 ID인 경우
   if (prevMatch && currentMatch) {
     return prevMatch[1] === currentMatch[1];
   }
@@ -33,7 +39,7 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
   useEffect(() => {
     setIsMounted(true);
     if (containerRef.current) {
-      gsap.set(containerRef.current, { opacity: 1 });
+      gsap.set(containerRef.current, { opacity: 1, x: 0 });
     }
   }, []);
 
@@ -43,7 +49,7 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
     // 첫 로드 시에는 애니메이션 없이 표시
     if (prevPathnameRef.current === null) {
       prevPathnameRef.current = pathname;
-      gsap.set(containerRef.current, { opacity: 1 });
+      gsap.set(containerRef.current, { opacity: 1, x: 0 });
       return;
     }
 
@@ -58,28 +64,49 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
       // 같은 전시 내 모드 전환인 경우 애니메이션 건너뛰기
       if (isSameExhibitionModeTransition(prevPathnameRef.current, pathname)) {
         prevPathnameRef.current = pathname;
-        // 애니메이션 없이 즉시 표시
-        gsap.set(containerRef.current, { opacity: 1 });
+        gsap.set(containerRef.current, { opacity: 1, x: 0 });
         return;
       }
 
-      // 다른 페이지로 이동하는 경우에만 애니메이션 실행
-      timelineRef.current = gsap.timeline();
+      const prevIsNav = isNavPage(prevPathnameRef.current);
+      const currentIsNav = isNavPage(pathname);
+      const isFromLanding = prevPathnameRef.current === '/';
+      const isToNav = currentIsNav && (prevIsNav || isFromLanding);
 
-      // 부드러운 페이드 아웃
-      timelineRef.current.to(containerRef.current, {
-        opacity: 0,
-        duration: 0.25,
-        ease: 'power2.out',
-      });
+      if (isToNav) {
+        // 네비게이션 페이지 간 이동 또는 랜딩에서 네비게이션 페이지로 이동
+        // 새 페이지를 오른쪽에서 슬라이드 인
+        gsap.set(containerRef.current, { x: '100%', opacity: 1 });
+        
+        timelineRef.current = gsap.timeline({
+          onComplete: () => {
+            if (containerRef.current) {
+              gsap.set(containerRef.current, { x: 0 });
+            }
+          }
+        });
 
-      // 부드러운 페이드 인
-      timelineRef.current.set(containerRef.current, { opacity: 0 });
-      timelineRef.current.to(containerRef.current, {
-        opacity: 1,
-        duration: 0.3,
-        ease: 'power2.in',
-      });
+        timelineRef.current.to(containerRef.current, {
+          x: 0,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      } else {
+        // 다른 페이지 전환: 페이드 아웃만 (진입은 페이드 없이)
+        timelineRef.current = gsap.timeline({
+          onComplete: () => {
+            if (containerRef.current) {
+              gsap.set(containerRef.current, { opacity: 1, x: 0 });
+            }
+          }
+        });
+
+        timelineRef.current.to(containerRef.current, {
+          opacity: 0,
+          duration: 0.25,
+          ease: 'power2.out',
+        });
+      }
 
       prevPathnameRef.current = pathname;
     }
@@ -93,9 +120,16 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
     };
   }, [pathname, isMounted]);
 
-  // 서버 사이드와 클라이언트 초기 렌더링 모두 opacity 1로 시작하여 하이드레이션 오류 방지
   return (
-    <div ref={containerRef} style={{ opacity: 1 }}>
+    <div 
+      ref={containerRef} 
+      style={{ 
+        opacity: 1, 
+        x: 0,
+        width: '100%',
+        overflow: 'hidden'
+      }}
+    >
       {children}
     </div>
   );

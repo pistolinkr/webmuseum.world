@@ -50,8 +50,8 @@ export default function Footer() {
               <h3 className="footer__section-title">Explore</h3>
               <ul className="footer__link-list">
                 <li>
-                  <Link href="/exhibition" className="footer__link">
-                    Exhibitions
+                  <Link href="/discover" className="footer__link">
+                    Discover
                   </Link>
                 </li>
                 <li>
@@ -61,7 +61,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link href="/explore" className="footer__link">
-                    Discover
+                    Explore
                   </Link>
                 </li>
               </ul>
@@ -111,7 +111,7 @@ export default function Footer() {
             © {currentYear} Pistolinkr. All rights reserved.
           </p>
           <p className="footer__tagline">
-            Made with G.gear service 𝚫 team.
+            Product line. 𝜜. 𝚫. G.gear service.
           </p>
         </div>
       </div>
