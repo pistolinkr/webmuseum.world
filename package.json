@@ -12,6 +12,7 @@
     "@react-three/drei": "^9.88.0",
     "@react-three/fiber": "^8.15.0",
     "botid": "^1.5.10",
+    "clsx": "^2.1.1",
     "firebase": "^12.5.0",
     "framer-motion": "^12.23.24",
     "gsap": "^3.12.2",
@@ -19,6 +20,7 @@
     "photoswipe": "^5.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "tailwind-merge": "^3.4.0",
     "three": "^0.160.0",
     "vercel": "^41.0.2"
   },
