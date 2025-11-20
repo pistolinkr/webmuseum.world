@@ -16,7 +16,8 @@ import {
   isSignInWithEmailLink,
   signInWithEmailLink,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions as cloudFunctions } from '@/lib/firebase';
@@ -39,6 +40,7 @@ interface AuthContextType {
   sendMagicLink: (email: string) => Promise<void>;
   signInWithMagicLink: (email: string, emailLink: string) => Promise<void>;
   isMagicLink: (emailLink: string) => boolean;
+  checkEmailExists: (email: string) => Promise<boolean>;
   // Email code authentication
   sendEmailCode: (email: string) => Promise<void>;
   signUpWithEmailCode: (email: string, code: string) => Promise<void>;
@@ -481,6 +483,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
   };
 
+  const checkEmailExists = async (email: string): Promise<boolean> => {
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized');
+    }
+    try {
+      const methods = await fetchSignInMethodsForEmail(auth, email.toLowerCase());
+      return methods.length > 0;
+    } catch (err) {
+      console.error('Error checking sign-in methods for email', err);
+      throw err;
+    }
+  };
+
   // Sign in with magic link
   const signInWithMagicLink = async (email: string, emailLink: string) => {
     if (!auth) {
@@ -762,6 +777,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     sendMagicLink,
     signInWithMagicLink,
     isMagicLink,
+    checkEmailExists,
     sendEmailCode,
     signUpWithEmailCode,
     registerPasskey,

@@ -1045,6 +1045,13 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   font-weight: 600;
 }
 
+.auth-form__error-text {
+  margin-top: 0.5rem;
+  color: #f87171;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
 .auth-form__checkbox-label {
   display: flex;
   align-items: center;
