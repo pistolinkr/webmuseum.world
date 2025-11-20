@@ -125,7 +125,6 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
       ref={containerRef} 
       style={{ 
         opacity: 1, 
-        x: 0,
         width: '100%',
         overflow: 'hidden'
       }}
