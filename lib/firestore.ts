@@ -319,15 +319,27 @@ export async function getArtworksByExhibition(exhibitionId: string): Promise<Art
 export async function createArtwork(artwork: Omit<Artwork, 'id'>): Promise<string | null> {
   try {
     const firestoreDb = ensureDb();
+    // Remove undefined values before saving to Firestore
+    // This ensures we don't send undefined fields which Firestore rejects
+    const cleanedData = removeUndefinedValues(artwork);
+    
+    console.log('Creating artwork with data:', cleanedData);
+    
     const docRef = await addDoc(collection(firestoreDb, ARTWORKS_COLLECTION), {
-      ...artwork,
+      ...cleanedData,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+    console.log('✅ Artwork created successfully:', docRef.id);
     return docRef.id;
-  } catch (error) {
-    console.error('Error creating artwork:', error);
-    return null;
+  } catch (error: any) {
+    console.error('❌ Error creating artwork:', error);
+    console.error('Error details:', {
+      code: error?.code,
+      message: error?.message,
+      stack: error?.stack
+    });
+    throw error; // Re-throw to allow caller to handle
   }
 }
 
@@ -352,9 +364,11 @@ export async function updateArtwork(id: string, updates: Partial<Artwork>, userI
       }
     }
     
+    // Remove undefined values before updating Firestore
+    const cleanedUpdates = removeUndefinedValues(updates);
     const docRef = doc(firestoreDb, ARTWORKS_COLLECTION, id);
     await updateDoc(docRef, {
-      ...updates,
+      ...cleanedUpdates,
       updatedAt: Timestamp.now(),
     });
     return true;

@@ -56,22 +56,61 @@ export default function ArtworkForm({
     }
 
     try {
-      const artworkData: Omit<Artwork, 'id'> = {
+      // Helper function to remove undefined values
+      const removeUndefined = <T extends Record<string, any>>(obj: T): Partial<T> => {
+        const cleaned: Partial<T> = {};
+        Object.keys(obj).forEach(key => {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            cleaned[key as keyof T] = obj[key];
+          }
+        });
+        return cleaned;
+      };
+
+      // Build artwork data, only including fields with values
+      const artworkDataRaw: any = {
         title: formData.title,
         artist: formData.artist,
-        artistId: formData.artistId || undefined,
         imageUrl: formData.imageUrl,
         caption: formData.caption,
         description: formData.description,
-        year: formData.year ? parseInt(formData.year) : undefined,
-        medium: formData.medium || undefined,
-        dimensions: formData.dimensions || undefined,
-        genre: formData.genre ? formData.genre.split(',').map(g => g.trim()).filter(Boolean) : undefined,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-        emotion: formData.emotion ? formData.emotion.split(',').map(e => e.trim()).filter(Boolean) : undefined,
         exhibitionId: exhibitionId,
         userId: currentUser.uid,
       };
+
+      // Only add optional fields if they have values
+      if (formData.artistId && formData.artistId.trim()) {
+        artworkDataRaw.artistId = formData.artistId.trim();
+      }
+      if (formData.year && formData.year.trim()) {
+        artworkDataRaw.year = parseInt(formData.year);
+      }
+      if (formData.medium && formData.medium.trim()) {
+        artworkDataRaw.medium = formData.medium.trim();
+      }
+      if (formData.dimensions && formData.dimensions.trim()) {
+        artworkDataRaw.dimensions = formData.dimensions.trim();
+      }
+      if (formData.genre && formData.genre.trim()) {
+        const genreArray = formData.genre.split(',').map(g => g.trim()).filter(Boolean);
+        if (genreArray.length > 0) {
+          artworkDataRaw.genre = genreArray;
+        }
+      }
+      if (formData.tags && formData.tags.trim()) {
+        const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+        if (tagsArray.length > 0) {
+          artworkDataRaw.tags = tagsArray;
+        }
+      }
+      if (formData.emotion && formData.emotion.trim()) {
+        const emotionArray = formData.emotion.split(',').map(e => e.trim()).filter(Boolean);
+        if (emotionArray.length > 0) {
+          artworkDataRaw.emotion = emotionArray;
+        }
+      }
+
+      const artworkData = removeUndefined(artworkDataRaw) as Omit<Artwork, 'id'>;
 
       if (artwork) {
         // Check if user owns the artwork before updating
@@ -90,26 +129,38 @@ export default function ArtworkForm({
         }
       } else {
         // Create new artwork
-        const artworkId = await createArtwork(artworkData);
-        if (artworkId) {
-          onSuccess?.();
-          // Reset form
-          setFormData({
-            title: '',
-            artist: '',
-            artistId: '',
-            imageUrl: '',
-            caption: '',
-            description: '',
-            year: '',
-            medium: '',
-            dimensions: '',
-            genre: '',
-            tags: '',
-            emotion: '',
-          });
-        } else {
-          setError('Failed to create artwork');
+        try {
+          const artworkId = await createArtwork(artworkData);
+          if (artworkId) {
+            onSuccess?.();
+            // Reset form
+            setFormData({
+              title: '',
+              artist: '',
+              artistId: '',
+              imageUrl: '',
+              caption: '',
+              description: '',
+              year: '',
+              medium: '',
+              dimensions: '',
+              genre: '',
+              tags: '',
+              emotion: '',
+            });
+          } else {
+            setError('Failed to create artwork');
+          }
+        } catch (createError: any) {
+          console.error('Error in createArtwork:', createError);
+          // Handle specific Firebase errors
+          if (createError?.code === 'permission-denied') {
+            setError('Permission denied. Please check your authentication and try again.');
+          } else if (createError?.message) {
+            setError(createError.message);
+          } else {
+            setError('Failed to create artwork. Please try again.');
+          }
         }
       }
     } catch (err: any) {
