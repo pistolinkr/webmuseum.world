@@ -354,7 +354,7 @@ export default function ArtworkForm({
         />
       </div>
 
-      <div className="artwork-form__actions">
+      <div className="artwork-form__actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
         {onCancel && (
           <button
             type="button"
@@ -370,7 +370,7 @@ export default function ArtworkForm({
           className="artwork-form__button artwork-form__button--primary"
           disabled={loading}
         >
-          {loading ? 'Saving...' : artwork ? 'Update Artwork' : 'Add Artwork'}
+          {loading ? (artwork ? 'Updating...' : 'Creating...') : (artwork ? 'Update Artwork' : 'Create Artwork')}
         </button>
       </div>
     </form>
