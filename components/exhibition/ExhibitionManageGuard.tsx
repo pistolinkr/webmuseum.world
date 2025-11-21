@@ -22,11 +22,13 @@ export default function ExhibitionManageGuard({ exhibition, children }: Exhibiti
       return;
     }
 
-    if (exhibition.userId !== currentUser.uid) {
+    // Check both ownerId (new) and userId (legacy) for backward compatibility
+    const ownerId = exhibition.ownerId || exhibition.userId;
+    if (ownerId !== currentUser.uid) {
       router.push(`/exhibition/${exhibition.id}`);
       return;
     }
-  }, [currentUser, loading, exhibition.userId, router]);
+  }, [currentUser, loading, exhibition.ownerId, exhibition.userId, exhibition.id, router]);
 
   if (loading) {
     return (
@@ -38,7 +40,9 @@ export default function ExhibitionManageGuard({ exhibition, children }: Exhibiti
     );
   }
 
-  if (!currentUser || exhibition.userId !== currentUser.uid) {
+  // Check both ownerId (new) and userId (legacy) for backward compatibility
+  const ownerId = exhibition.ownerId || exhibition.userId;
+  if (!currentUser || ownerId !== currentUser.uid) {
     return null;
   }
 

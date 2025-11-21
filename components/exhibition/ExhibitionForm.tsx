@@ -180,10 +180,13 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
           if (exhibitionId) {
             // Call onSuccess first to allow parent to refresh data
             onSuccess?.();
-            // Only navigate if onSuccess is not provided (standalone form)
+            // Navigate to manage page to add artworks
             // If onSuccess is provided, parent component handles the UI update
             if (!onSuccess) {
-              router.push(`/exhibition/${exhibitionId}/story`);
+              router.push(`/exhibition/${exhibitionId}/manage`);
+            } else {
+              // If called from account page, navigate to manage page
+              router.push(`/exhibition/${exhibitionId}/manage`);
             }
           } else {
             setError('Failed to create exhibition');

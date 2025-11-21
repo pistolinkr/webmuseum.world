@@ -9,12 +9,22 @@ interface SocialLoginFormProps {
 }
 
 export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialLoginFormProps) {
-  const { signInWithGoogle, signInWithMicrosoft, signInWithApple, signInWithGitHub, sendMagicLink, signInWithMagicLink, isMagicLink } = useAuth();
+  const { 
+    signInWithGoogle, 
+    signInWithMicrosoft, 
+    signInWithApple, 
+    signInWithGitHub, 
+    sendMagicLink, 
+    signInWithMagicLink, 
+    isMagicLink,
+    checkEmailExists
+  } = useAuth();
   const [error, setError] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState<'google' | 'microsoft' | 'apple' | 'github' | 'email' | null>(null);
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     setError((prev) => ({ ...prev, google: false }));
@@ -161,11 +171,21 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
     setLoading('email');
     
     try {
-      await sendMagicLink(email);
+      const normalizedEmail = email.trim().toLowerCase();
+      const exists = await checkEmailExists(normalizedEmail);
+      if (!exists) {
+        setError((prev) => ({ ...prev, email: true }));
+        setEmailMessage('No account found for this email. Please sign up first.');
+        return;
+      }
+      setEmailMessage(null);
+      setEmail(normalizedEmail);
+      await sendMagicLink(normalizedEmail);
       setEmailSent(true);
       setIsEmailOpen(false);
     } catch (err: any) {
       setError((prev) => ({ ...prev, email: true }));
+      setEmailMessage(err?.message || 'Authentication failed, please try again.');
       setTimeout(() => {
         setError((prev) => ({ ...prev, email: false }));
       }, 5000);
@@ -342,6 +362,9 @@ export default function SocialLoginForm({ onSuccess, onSwitchToSignUp }: SocialL
               </svg>
             </button>
           </form>
+        )}
+        {isEmailOpen && emailMessage && (
+          <p className="auth-form__error-text">{emailMessage}</p>
         )}
       </div>
     </div>

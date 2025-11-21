@@ -9,6 +9,6 @@ export default async function StoryPage({ params }: { params: { id: string } }) 
     notFound();
   }
 
-  return <StoryView artworks={exhibition.artworks} exhibitionId={params.id} />;
+  return <StoryView artworks={exhibition.artworks} exhibitionId={params.id} exhibition={exhibition} />;
 }
 

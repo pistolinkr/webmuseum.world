@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Artwork } from '@/types';
+import { Artwork, Exhibition } from '@/types';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import EmptyExhibitionState from '@/components/exhibition/EmptyExhibitionState';
+import { getExhibition } from '@/lib/firestore';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -13,9 +15,10 @@ if (typeof window !== 'undefined') {
 interface StoryViewProps {
   artworks: Artwork[];
   exhibitionId: string;
+  exhibition?: Exhibition;
 }
 
-export default function StoryView({ artworks, exhibitionId }: StoryViewProps) {
+export default function StoryView({ artworks, exhibitionId, exhibition }: StoryViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
@@ -98,6 +101,11 @@ export default function StoryView({ artworks, exhibitionId }: StoryViewProps) {
       });
     };
   }, [artworks]);
+
+  // Show empty state if no artworks
+  if (artworks.length === 0 && exhibition) {
+    return <EmptyExhibitionState exhibition={exhibition} />;
+  }
 
   return (
     <div ref={containerRef} style={{ paddingTop: '4rem', paddingBottom: '8rem' }}>

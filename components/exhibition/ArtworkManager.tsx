@@ -19,8 +19,11 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
   const [editingArtwork, setEditingArtwork] = useState<Artwork | null>(null);
   const [deletingArtwork, setDeletingArtwork] = useState<Artwork | null>(null);
 
-  // Check if current user owns this exhibition
-  const isOwner = currentUser && exhibition.userId === currentUser.uid;
+  // Check if current user owns this exhibition (support both ownerId and userId)
+  const isOwner = currentUser && (
+    exhibition.ownerId === currentUser.uid || 
+    exhibition.userId === currentUser.uid
+  );
 
   useEffect(() => {
     if (!isOwner) {
@@ -152,8 +155,53 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
           ))}
         </div>
       ) : (
-        <div className="artwork-manager__empty">
-          <p>No artworks yet. Add your first artwork to get started!</p>
+        <div className="artwork-manager__empty" style={{
+          padding: '4rem 2rem',
+          textAlign: 'center',
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px dashed var(--border-primary)',
+        }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1.5rem', opacity: 0.5 }}>🖼️</div>
+          <h3 style={{ 
+            fontSize: '1.5rem', 
+            marginBottom: '0.5rem', 
+            fontWeight: 500,
+            color: 'var(--text-primary)'
+          }}>
+            No artworks yet
+          </h3>
+          <p style={{ 
+            fontSize: '1rem', 
+            color: 'var(--text-secondary)',
+            marginBottom: '2rem'
+          }}>
+            Add your first artwork to get started!
+          </p>
+          <button
+            onClick={() => setShowAddForm(true)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-primary)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '1rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            + Add Your First Artwork
+          </button>
         </div>
       )}
 

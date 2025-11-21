@@ -20,7 +20,8 @@ import {
   fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
-import { auth, functions as cloudFunctions } from '@/lib/firebase';
+import { auth, functions as cloudFunctions, db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { User } from '@/types';
 import { getUser, createUser, updateUser } from '@/lib/firestore';
 import { registerPasskey as registerPasskeyWebAuthn, authenticateWithPasskey, isWebAuthnSupported } from '@/lib/webauthn';
@@ -487,13 +488,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!auth) {
       throw new Error('Firebase Auth is not initialized');
     }
+    const normalizedEmail = email.toLowerCase();
     try {
-      const methods = await fetchSignInMethodsForEmail(auth, email.toLowerCase());
-      return methods.length > 0;
+      const methods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+      if (methods.includes('password') || methods.includes('emailLink')) {
+        return true;
+      }
     } catch (err) {
-      console.error('Error checking sign-in methods for email', err);
-      throw err;
+      console.error('Error checking auth providers for email:', err);
     }
+
+    try {
+      if (db) {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('email', '==', normalizedEmail), limit(1));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('Error checking Firestore for email:', err);
+    }
+
+    return false;
   };
 
   // Sign in with magic link
