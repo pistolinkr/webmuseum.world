@@ -86,30 +86,57 @@ export async function getExhibition(id: string): Promise<Exhibition | null> {
 export async function getAllExhibitions(userId?: string): Promise<Exhibition[]> {
   try {
     const firestoreDb = ensureDb();
-    let q;
+    let exhibitions: Exhibition[] = [];
     
     if (userId) {
       // Get exhibitions for a specific user
-      q = query(
-        collection(firestoreDb, EXHIBITIONS_COLLECTION),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
+      // Query both ownerId (new) and userId (legacy) for backward compatibility
+      // Note: We query without orderBy first to avoid index requirements, then sort in memory
+      const [ownerIdQuery, userIdQuery] = await Promise.all([
+        getDocs(query(
+          collection(firestoreDb, EXHIBITIONS_COLLECTION),
+          where('ownerId', '==', userId)
+        )).catch(() => ({ docs: [] })),
+        getDocs(query(
+          collection(firestoreDb, EXHIBITIONS_COLLECTION),
+          where('userId', '==', userId)
+        )).catch(() => ({ docs: [] }))
+      ]);
+      
+      // Combine results and remove duplicates
+      const allDocs = [...ownerIdQuery.docs, ...userIdQuery.docs];
+      const uniqueDocs = Array.from(
+        new Map(allDocs.map(doc => [doc.id, doc])).values()
       );
+      
+      exhibitions = uniqueDocs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Exhibition[];
+      
+      // Sort by createdAt descending (in memory)
+      exhibitions.sort((a, b) => {
+        const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : 
+                     (a.createdAt as any)?.seconds ? (a.createdAt as any).seconds * 1000 : 
+                     (a.createdAt as any)?.toMillis ? (a.createdAt as any).toMillis() : 0;
+        const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : 
+                     (b.createdAt as any)?.seconds ? (b.createdAt as any).seconds * 1000 : 
+                     (b.createdAt as any)?.toMillis ? (b.createdAt as any).toMillis() : 0;
+        return bTime - aTime;
+      });
     } else {
       // Get all public exhibitions
-      q = query(
+      const querySnapshot = await getDocs(query(
         collection(firestoreDb, EXHIBITIONS_COLLECTION),
         where('isPublic', '==', true),
         orderBy('date', 'desc')
-      );
+      ));
+      
+      exhibitions = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Exhibition[];
     }
-    
-    const querySnapshot = await getDocs(q);
-    
-    const exhibitions = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Exhibition[];
     
     if (exhibitions.length > 0) {
       console.log(`✅ Firebase: Loaded ${exhibitions.length} exhibitions from Firestore`);

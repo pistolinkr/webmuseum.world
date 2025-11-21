@@ -178,8 +178,13 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
         try {
           const exhibitionId = await createExhibition(exhibitionData);
           if (exhibitionId) {
+            // Call onSuccess first to allow parent to refresh data
             onSuccess?.();
-            router.push(`/exhibition/${exhibitionId}/story`);
+            // Only navigate if onSuccess is not provided (standalone form)
+            // If onSuccess is provided, parent component handles the UI update
+            if (!onSuccess) {
+              router.push(`/exhibition/${exhibitionId}/story`);
+            }
           } else {
             setError('Failed to create exhibition');
           }
