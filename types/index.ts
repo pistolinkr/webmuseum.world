@@ -26,7 +26,8 @@ export interface Exhibition {
   artworks: Artwork[];
   curator?: string;
   artistIds?: string[];
-  userId?: string; // User who created/owns this museum/exhibition
+  ownerId?: string; // User who created/owns this museum/exhibition (required for Firestore rules)
+  userId?: string; // User who created/owns this museum/exhibition (backward compatibility)
   date?: string;
   startDate?: string;
   endDate?: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import LandingHeader from './LandingHeader';
+import Footer from './Footer';
 
 const HIDDEN_ROUTES = new Set([
   '/auth/login',
@@ -9,13 +9,13 @@ const HIDDEN_ROUTES = new Set([
   '/privacy',
 ]);
 
-export default function LandingHeaderWrapper() {
+export default function ConditionalFooter() {
   const pathname = usePathname();
 
   if (pathname && HIDDEN_ROUTES.has(pathname)) {
     return null;
   }
 
-  return <LandingHeader />;
+  return <Footer />;
 }
 

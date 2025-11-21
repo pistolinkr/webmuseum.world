@@ -5,7 +5,7 @@ import Favicon from '@/components/Favicon';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import LandingHeaderWrapper from '@/components/landing/LandingHeaderWrapper';
 import AuthProviderWrapper from '@/components/providers/AuthProviderWrapper';
-import Footer from '@/components/Footer';
+import ConditionalFooter from '@/components/ConditionalFooter';
 
 export const metadata: Metadata = {
   title: 'Web Museum',
@@ -49,7 +49,7 @@ export default function RootLayout({
           <Favicon />
           <LandingHeaderWrapper />
           <PageTransitionWrapper>{children}</PageTransitionWrapper>
-          <Footer />
+          <ConditionalFooter />
         </AuthProviderWrapper>
       </body>
     </html>

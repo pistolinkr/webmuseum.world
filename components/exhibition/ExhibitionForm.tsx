@@ -110,7 +110,8 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
         title: formData.title,
         description: formData.description,
         isPublic: formData.isPublic,
-        userId: currentUser.uid,
+        ownerId: currentUser.uid, // CRITICAL: Must match Firestore rules
+        userId: currentUser.uid, // Keep for backward compatibility
         artistIds: [],
         artworks: [],
         featured: false,
@@ -152,13 +153,19 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
 
       if (exhibition) {
         // Check if user owns the exhibition before updating
-        if (exhibition.userId !== currentUser.uid) {
+        // Support both ownerId (new) and userId (legacy) for backward compatibility
+        const ownerId = exhibition.ownerId || exhibition.userId;
+        if (ownerId !== currentUser.uid) {
           setError('You do not have permission to update this exhibition');
           setLoading(false);
           return;
         }
         
-        // Update existing exhibition
+        // Update existing exhibition - ensure ownerId is set
+        if (!exhibitionData.ownerId && currentUser.uid) {
+          exhibitionData.ownerId = currentUser.uid;
+        }
+        
         const success = await updateExhibition(exhibition.id, exhibitionData, currentUser.uid);
         if (success) {
           onSuccess?.();

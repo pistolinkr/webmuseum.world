@@ -171,7 +171,9 @@ export async function updateExhibition(id: string, updates: Partial<Exhibition>,
       }
       
       const exhibitionData = docSnap.data() as Exhibition;
-      if (exhibitionData.userId !== userId) {
+      // Check both ownerId and userId for backward compatibility
+      const ownerId = exhibitionData.ownerId || exhibitionData.userId;
+      if (ownerId !== userId) {
         console.error('Permission denied: User does not own this exhibition');
         throw new Error('You do not have permission to update this exhibition');
       }
@@ -209,7 +211,9 @@ export async function deleteExhibition(id: string, userId?: string): Promise<boo
       }
       
       const exhibitionData = docSnap.data() as Exhibition;
-      if (exhibitionData.userId !== userId) {
+      // Check both ownerId and userId for backward compatibility
+      const ownerId = exhibitionData.ownerId || exhibitionData.userId;
+      if (ownerId !== userId) {
         console.error('Permission denied: User does not own this exhibition');
         throw new Error('You do not have permission to delete this exhibition');
       }
