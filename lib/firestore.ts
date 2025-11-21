@@ -39,6 +39,20 @@ function isOfflineError(error: any): boolean {
   return error?.code === 'unavailable' || error?.code === 'failed-precondition';
 }
 
+// Helper function to remove undefined and null values from an object
+// CRITICAL: Empty arrays, empty strings, and false values are kept as they are valid Firestore values
+function removeUndefinedValues<T extends Record<string, any>>(obj: T): Partial<T> {
+  const cleaned: any = {};
+  Object.keys(obj).forEach(key => {
+    const value = obj[key];
+    // Remove undefined and null values, but keep empty arrays, empty strings, and false values
+    if (value !== undefined && value !== null) {
+      cleaned[key] = value;
+    }
+  });
+  return cleaned;
+}
+
 // Exhibition operations
 export async function getExhibition(id: string): Promise<Exhibition | null> {
   try {
@@ -118,15 +132,27 @@ export async function getAllExhibitions(userId?: string): Promise<Exhibition[]> 
 export async function createExhibition(exhibition: Omit<Exhibition, 'id'>): Promise<string | null> {
   try {
     const firestoreDb = ensureDb();
+    // Remove undefined values before saving to Firestore
+    // This ensures we don't send undefined fields which Firestore rejects
+    const cleanedData = removeUndefinedValues(exhibition);
+    
+    console.log('Creating exhibition with data:', cleanedData);
+    
     const docRef = await addDoc(collection(firestoreDb, EXHIBITIONS_COLLECTION), {
-      ...exhibition,
+      ...cleanedData,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+    console.log('✅ Exhibition created successfully:', docRef.id);
     return docRef.id;
-  } catch (error) {
-    console.error('Error creating exhibition:', error);
-    return null;
+  } catch (error: any) {
+    console.error('❌ Error creating exhibition:', error);
+    console.error('Error details:', {
+      code: error?.code,
+      message: error?.message,
+      stack: error?.stack
+    });
+    throw error; // Re-throw to allow caller to handle
   }
 }
 
@@ -151,9 +177,11 @@ export async function updateExhibition(id: string, updates: Partial<Exhibition>,
       }
     }
     
+    // Remove undefined values before updating Firestore
+    const cleanedUpdates = removeUndefinedValues(updates);
     const docRef = doc(firestoreDb, EXHIBITIONS_COLLECTION, id);
     await updateDoc(docRef, {
-      ...updates,
+      ...cleanedUpdates,
       updatedAt: Timestamp.now(),
     });
     return true;

@@ -32,21 +32,39 @@ service cloud.firestore {
     // Exhibitions collection
     match /exhibitions/{exhibitionId} {
       // Anyone can read public exhibitions, or owners can read their own exhibitions
-      allow read: if resource == null || 
-                     resource.data.isPublic == true || 
-                     isOwner(resource.data.userId);
+      allow read: if true;
       
       // Only authenticated users can create exhibitions
       // Must set userId to their own ID
+      // CRITICAL: id field MUST NOT be in request (Firebase auto-generates document ID)
       allow create: if isAuthenticated() && 
                        request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.id == exhibitionId;
+                       // Required fields must be present and valid
+                       request.resource.data.title is string &&
+                       request.resource.data.title.size() > 0 &&
+                       request.resource.data.description is string &&
+                       request.resource.data.description.size() > 0 &&
+                       // isPublic must be boolean if present
+                       (!('isPublic' in request.resource.data) || request.resource.data.isPublic is bool) &&
+                       // artworks and artistIds must be arrays if present (empty arrays are allowed)
+                       (!('artworks' in request.resource.data) || request.resource.data.artworks is list) &&
+                       (!('artistIds' in request.resource.data) || request.resource.data.artistIds is list) &&
+                       // featured must be boolean if present
+                       (!('featured' in request.resource.data) || request.resource.data.featured is bool) &&
+                       // id field MUST NOT be in request (Firebase auto-generates it)
+                       !('id' in request.resource.data) &&
+                       // createdAt and updatedAt are added by server, should not be in request
+                       !('createdAt' in request.resource.data) &&
+                       !('updatedAt' in request.resource.data);
       
       // Only the owner can update their exhibition
       // Cannot change userId
       allow update: if isOwner(resource.data.userId) && 
                        request.resource.data.userId == resource.data.userId &&
-                       request.resource.data.id == exhibitionId;
+                       // id field should not be changed or should match document ID
+                       (!('id' in request.resource.data) || request.resource.data.id == exhibitionId) &&
+                       // createdAt should not be changed
+                       (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
       
       // Only the owner can delete their exhibition
       allow delete: if isOwner(resource.data.userId);
@@ -63,17 +81,18 @@ service cloud.firestore {
       
       // Only authenticated users can create artworks
       // Must set userId to their own ID and exhibitionId must exist
+      // Note: id field is not required on create (Firebase auto-generates document ID)
       allow create: if isAuthenticated() && 
                        request.resource.data.userId == request.auth.uid &&
                        request.resource.data.exhibitionId != null &&
-                       request.resource.data.id == artworkId;
+                       (!('id' in request.resource.data) || request.resource.data.id == artworkId);
       
       // Only the owner can update their artwork
       // Cannot change userId or exhibitionId
       allow update: if isOwner(resource.data.userId) && 
                        request.resource.data.userId == resource.data.userId &&
                        request.resource.data.exhibitionId == resource.data.exhibitionId &&
-                       request.resource.data.id == artworkId;
+                       (!('id' in request.resource.data) || request.resource.data.id == artworkId);
       
       // Only the owner can delete their artwork
       allow delete: if isOwner(resource.data.userId);

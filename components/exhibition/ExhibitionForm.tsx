@@ -94,23 +94,61 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
     }
 
     try {
-      const exhibitionData: Omit<Exhibition, 'id'> = {
+      // Helper function to remove undefined values
+      const removeUndefined = <T extends Record<string, any>>(obj: T): Partial<T> => {
+        const cleaned: Partial<T> = {};
+        Object.keys(obj).forEach(key => {
+          if (obj[key] !== undefined) {
+            cleaned[key as keyof T] = obj[key];
+          }
+        });
+        return cleaned;
+      };
+
+      // Build exhibition data, only including fields with values
+      const exhibitionDataRaw: any = {
         title: formData.title,
         description: formData.description,
-        statement: formData.statement || undefined,
-        curator: formData.curator || undefined,
-        date: formData.date || undefined,
-        startDate: formData.startDate || undefined,
-        endDate: formData.endDate || undefined,
         isPublic: formData.isPublic,
-        thumbnailUrl: formData.thumbnailUrl || undefined,
-        genre: formData.genre ? formData.genre.split(',').map(g => g.trim()).filter(Boolean) : undefined,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         userId: currentUser.uid,
         artistIds: [],
         artworks: [],
         featured: false,
       };
+
+      // Only add optional fields if they have values
+      if (formData.statement && formData.statement.trim()) {
+        exhibitionDataRaw.statement = formData.statement.trim();
+      }
+      if (formData.curator && formData.curator.trim()) {
+        exhibitionDataRaw.curator = formData.curator.trim();
+      }
+      if (formData.date && formData.date.trim()) {
+        exhibitionDataRaw.date = formData.date.trim();
+      }
+      if (formData.startDate && formData.startDate.trim()) {
+        exhibitionDataRaw.startDate = formData.startDate.trim();
+      }
+      if (formData.endDate && formData.endDate.trim()) {
+        exhibitionDataRaw.endDate = formData.endDate.trim();
+      }
+      if (formData.thumbnailUrl && formData.thumbnailUrl.trim()) {
+        exhibitionDataRaw.thumbnailUrl = formData.thumbnailUrl.trim();
+      }
+      if (formData.genre && formData.genre.trim()) {
+        const genreArray = formData.genre.split(',').map(g => g.trim()).filter(Boolean);
+        if (genreArray.length > 0) {
+          exhibitionDataRaw.genre = genreArray;
+        }
+      }
+      if (formData.tags && formData.tags.trim()) {
+        const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+        if (tagsArray.length > 0) {
+          exhibitionDataRaw.tags = tagsArray;
+        }
+      }
+
+      const exhibitionData = removeUndefined(exhibitionDataRaw) as Omit<Exhibition, 'id'>;
 
       if (exhibition) {
         // Check if user owns the exhibition before updating
@@ -130,15 +168,28 @@ export default function ExhibitionForm({ exhibition, onSuccess, onCancel }: Exhi
         }
       } else {
         // Create new exhibition
-        const exhibitionId = await createExhibition(exhibitionData);
-        if (exhibitionId) {
-          onSuccess?.();
-          router.push(`/exhibition/${exhibitionId}/story`);
-        } else {
-          setError('Failed to create exhibition');
+        try {
+          const exhibitionId = await createExhibition(exhibitionData);
+          if (exhibitionId) {
+            onSuccess?.();
+            router.push(`/exhibition/${exhibitionId}/story`);
+          } else {
+            setError('Failed to create exhibition');
+          }
+        } catch (createError: any) {
+          console.error('Error in createExhibition:', createError);
+          // Handle specific Firebase permission errors
+          if (createError?.code === 'permission-denied') {
+            setError('Permission denied. Please check your authentication and try again.');
+          } else if (createError?.message) {
+            setError(createError.message);
+          } else {
+            setError('Failed to create exhibition. Please try again.');
+          }
         }
       }
     } catch (err: any) {
+      console.error('Error in handleSubmit:', err);
       setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);

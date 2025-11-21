@@ -11,9 +11,34 @@ interface PageTransitionWrapperProps {
 // 네비게이션 페이지들 (Discover, Artist, Explore)
 const NAV_PAGES = ['/discover', '/artist', '/explore'];
 
+// 네비게이션 페이지 순서 정의
+const NAV_ORDER: Record<string, number> = {
+  '/discover': 0,
+  '/artist': 1,
+  '/explore': 2,
+};
+
 // 네비게이션 페이지인지 확인
 function isNavPage(path: string): boolean {
   return NAV_PAGES.includes(path) || path.startsWith('/artist/');
+}
+
+// 네비게이션 페이지의 순서 가져오기
+function getNavOrder(path: string): number | null {
+  if (path === '/discover') return 0;
+  if (path === '/explore') return 2;
+  if (path === '/artist' || path.startsWith('/artist/')) return 1;
+  return null;
+}
+
+// 하단에서 등장하는 페이지들 (Sign in, Sign up, Privacy, My account)
+function isBottomSlidePage(path: string): boolean {
+  return (
+    path === '/auth/login' ||
+    path === '/auth/signup' ||
+    path === '/privacy' ||
+    path === '/account'
+  );
 }
 
 // 같은 전시 내 모드 전환인지 확인하는 함수
@@ -39,7 +64,7 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
   useEffect(() => {
     setIsMounted(true);
     if (containerRef.current) {
-      gsap.set(containerRef.current, { opacity: 1, x: 0 });
+      gsap.set(containerRef.current, { opacity: 1, x: 0, y: 0 });
     }
   }, []);
 
@@ -49,7 +74,7 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
     // 첫 로드 시에는 애니메이션 없이 표시
     if (prevPathnameRef.current === null) {
       prevPathnameRef.current = pathname;
-      gsap.set(containerRef.current, { opacity: 1, x: 0 });
+      gsap.set(containerRef.current, { opacity: 1, x: 0, y: 0 });
       return;
     }
 
@@ -64,19 +89,137 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
       // 같은 전시 내 모드 전환인 경우 애니메이션 건너뛰기
       if (isSameExhibitionModeTransition(prevPathnameRef.current, pathname)) {
         prevPathnameRef.current = pathname;
-        gsap.set(containerRef.current, { opacity: 1, x: 0 });
+        gsap.set(containerRef.current, { opacity: 1, x: 0, y: 0 });
         return;
       }
 
       const prevIsNav = isNavPage(prevPathnameRef.current);
       const currentIsNav = isNavPage(pathname);
-      const isFromLanding = prevPathnameRef.current === '/';
-      const isToNav = currentIsNav && (prevIsNav || isFromLanding);
+      const prevIsBottom = isBottomSlidePage(prevPathnameRef.current);
+      const currentIsBottom = isBottomSlidePage(pathname);
 
-      if (isToNav) {
-        // 네비게이션 페이지 간 이동 또는 랜딩에서 네비게이션 페이지로 이동
-        // 새 페이지를 오른쪽에서 슬라이드 인
-        gsap.set(containerRef.current, { x: '100%', opacity: 1 });
+      // 하단에서 등장하는 페이지들 (Sign in, Sign up, Privacy, My account)
+      if (currentIsBottom) {
+        gsap.set(containerRef.current, { y: '100%', opacity: 1, x: 0 });
+        
+        timelineRef.current = gsap.timeline({
+          onComplete: () => {
+            if (containerRef.current) {
+              gsap.set(containerRef.current, { y: 0 });
+            }
+          }
+        });
+
+        timelineRef.current.to(containerRef.current, {
+          y: 0,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      }
+      // 하단 슬라이드 페이지에서 다른 페이지로 이동하는 경우
+      else if (prevIsBottom && !currentIsBottom) {
+        // 일반 페이드 전환 사용
+        timelineRef.current = gsap.timeline({
+          onComplete: () => {
+            if (containerRef.current) {
+              gsap.set(containerRef.current, { opacity: 1, x: 0, y: 0 });
+            }
+          }
+        });
+
+        timelineRef.current.to(containerRef.current, {
+          opacity: 0,
+          duration: 0.25,
+          ease: 'power2.out',
+        });
+      }
+      // 네비게이션 페이지 간 이동
+      else if (prevIsNav && currentIsNav) {
+        const prevOrder = getNavOrder(prevPathnameRef.current);
+        const currentOrder = getNavOrder(pathname);
+        
+        // 순서가 있는 경우 (discover, artist, explore)
+        if (prevOrder !== null && currentOrder !== null) {
+          // 앞으로 이동 (discover → artist → explore): 오른쪽에서 등장
+          if (currentOrder > prevOrder) {
+            // 예: discover(0) → artist(1) → explore(2)
+            gsap.set(containerRef.current, { x: '100%', opacity: 1, y: 0 });
+            
+            timelineRef.current = gsap.timeline({
+              onComplete: () => {
+                if (containerRef.current) {
+                  gsap.set(containerRef.current, { x: 0 });
+                }
+              }
+            });
+
+            timelineRef.current.to(containerRef.current, {
+              x: 0,
+              duration: 0.4,
+              ease: 'power2.out',
+            });
+          }
+          // 뒤로 이동 (explore → artist → discover, artist → discover): 왼쪽에서 등장
+          else if (currentOrder < prevOrder) {
+            // 예: explore(2) → artist(1) → discover(0), artist(1) → discover(0)
+            gsap.set(containerRef.current, { x: '-100%', opacity: 1, y: 0 });
+            
+            timelineRef.current = gsap.timeline({
+              onComplete: () => {
+                if (containerRef.current) {
+                  gsap.set(containerRef.current, { x: 0 });
+                }
+              }
+            });
+
+            timelineRef.current.to(containerRef.current, {
+              x: 0,
+              duration: 0.4,
+              ease: 'power2.out',
+            });
+          }
+          // 같은 순서 (artist → artist/123 등): 기본 오른쪽 슬라이드
+          else {
+            gsap.set(containerRef.current, { x: '100%', opacity: 1, y: 0 });
+            
+            timelineRef.current = gsap.timeline({
+              onComplete: () => {
+                if (containerRef.current) {
+                  gsap.set(containerRef.current, { x: 0 });
+                }
+              }
+            });
+
+            timelineRef.current.to(containerRef.current, {
+              x: 0,
+              duration: 0.4,
+              ease: 'power2.out',
+            });
+          }
+        }
+        // 순서를 알 수 없는 경우: 기본 오른쪽 슬라이드
+        else {
+          gsap.set(containerRef.current, { x: '100%', opacity: 1, y: 0 });
+          
+          timelineRef.current = gsap.timeline({
+            onComplete: () => {
+              if (containerRef.current) {
+                gsap.set(containerRef.current, { x: 0 });
+              }
+            }
+          });
+
+          timelineRef.current.to(containerRef.current, {
+            x: 0,
+            duration: 0.4,
+            ease: 'power2.out',
+          });
+        }
+      }
+      // 다른 페이지에서 네비게이션 페이지로 이동 (방향 고려)
+      else if (!prevIsNav && currentIsNav) {
+        // 다른 페이지에서 네비게이션 페이지로 올 때는 항상 오른쪽에서 등장
+        gsap.set(containerRef.current, { x: '100%', opacity: 1, y: 0 });
         
         timelineRef.current = gsap.timeline({
           onComplete: () => {
@@ -91,12 +234,31 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
           duration: 0.4,
           ease: 'power2.out',
         });
-      } else {
-        // 다른 페이지 전환: 페이드 아웃만 (진입은 페이드 없이)
+      }
+      // 랜딩에서 네비게이션 페이지로 이동
+      else if (prevPathnameRef.current === '/' && currentIsNav) {
+        gsap.set(containerRef.current, { x: '100%', opacity: 1, y: 0 });
+        
         timelineRef.current = gsap.timeline({
           onComplete: () => {
             if (containerRef.current) {
-              gsap.set(containerRef.current, { opacity: 1, x: 0 });
+              gsap.set(containerRef.current, { x: 0 });
+            }
+          }
+        });
+
+        timelineRef.current.to(containerRef.current, {
+          x: 0,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      }
+      // 다른 페이지 전환: 페이드 아웃만 (진입은 페이드 없이)
+      else {
+        timelineRef.current = gsap.timeline({
+          onComplete: () => {
+            if (containerRef.current) {
+              gsap.set(containerRef.current, { opacity: 1, x: 0, y: 0 });
             }
           }
         });
