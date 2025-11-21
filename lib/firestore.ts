@@ -328,31 +328,16 @@ export async function getArtworksByExhibition(exhibitionId: string): Promise<Art
     return artworks;
   } catch (error: any) {
     if (isOfflineError(error)) {
-      console.warn(`⚠️ Firebase: Client is offline. Artworks for exhibition "${exhibitionId}" will use cached data.`);
-      // Try to get from cache even when offline
-      try {
-        const firestoreDb = ensureDb();
-        const q = query(
-          collection(firestoreDb, ARTWORKS_COLLECTION),
-          where('exhibitionId', '==', exhibitionId)
-        );
-        // Use getDocs with source: 'cache' to get cached data
-        const querySnapshot = await getDocs(q);
-        const artworks = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Artwork[];
-        
-        if (artworks.length > 0) {
-          console.log(`✅ Firebase: Loaded ${artworks.length} artworks from cache for exhibition "${exhibitionId}"`);
-        }
-        
-        return artworks;
-      } catch (cacheError) {
-        console.warn(`⚠️ Firebase: Could not load artworks from cache:`, cacheError);
-      }
+      console.warn(`⚠️ Firebase: Client is offline. Artworks for exhibition "${exhibitionId}" may use cached data.`);
+      // getDocs automatically uses cache when offline, so we don't need special handling
+      // The error might be due to missing index, but we've removed orderBy to avoid that
     } else {
       console.error('❌ Error getting artworks:', error);
+      console.error('Error details:', {
+        code: error?.code,
+        message: error?.message,
+        stack: error?.stack
+      });
     }
     return [];
   }
