@@ -295,22 +295,64 @@ export async function deleteExhibition(id: string, userId?: string): Promise<boo
 export async function getArtworksByExhibition(exhibitionId: string): Promise<Artwork[]> {
   try {
     const firestoreDb = ensureDb();
+    // Query without orderBy to avoid index requirements and work better offline
+    // We'll sort in memory instead
     const q = query(
       collection(firestoreDb, ARTWORKS_COLLECTION),
-      where('exhibitionId', '==', exhibitionId),
-      orderBy('createdAt', 'asc')
+      where('exhibitionId', '==', exhibitionId)
     );
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map((doc) => ({
+    const artworks = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as Artwork[];
+    
+    // Sort by createdAt ascending (in memory)
+    artworks.sort((a, b) => {
+      const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : 
+                   (a.createdAt as any)?.seconds ? (a.createdAt as any).seconds * 1000 : 
+                   (a.createdAt as any)?.toMillis ? (a.createdAt as any).toMillis() : 0;
+      const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : 
+                   (b.createdAt as any)?.seconds ? (b.createdAt as any).seconds * 1000 : 
+                   (b.createdAt as any)?.toMillis ? (b.createdAt as any).toMillis() : 0;
+      return aTime - bTime;
+    });
+    
+    if (artworks.length > 0) {
+      console.log(`✅ Firebase: Loaded ${artworks.length} artworks for exhibition "${exhibitionId}"`);
+    } else {
+      console.log(`⚠️ Firebase: No artworks found for exhibition "${exhibitionId}"`);
+    }
+    
+    return artworks;
   } catch (error: any) {
     if (isOfflineError(error)) {
-      console.warn(`⚠️ Firebase: Client is offline. Artworks for exhibition "${exhibitionId}" will use mock data.`);
+      console.warn(`⚠️ Firebase: Client is offline. Artworks for exhibition "${exhibitionId}" will use cached data.`);
+      // Try to get from cache even when offline
+      try {
+        const firestoreDb = ensureDb();
+        const q = query(
+          collection(firestoreDb, ARTWORKS_COLLECTION),
+          where('exhibitionId', '==', exhibitionId)
+        );
+        // Use getDocs with source: 'cache' to get cached data
+        const querySnapshot = await getDocs(q);
+        const artworks = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Artwork[];
+        
+        if (artworks.length > 0) {
+          console.log(`✅ Firebase: Loaded ${artworks.length} artworks from cache for exhibition "${exhibitionId}"`);
+        }
+        
+        return artworks;
+      } catch (cacheError) {
+        console.warn(`⚠️ Firebase: Could not load artworks from cache:`, cacheError);
+      }
     } else {
-      console.error('Error getting artworks:', error);
+      console.error('❌ Error getting artworks:', error);
     }
     return [];
   }

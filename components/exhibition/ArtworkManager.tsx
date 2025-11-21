@@ -47,9 +47,17 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
   const handleSuccess = async () => {
     setShowAddForm(false);
     setEditingArtwork(null);
-    // Reload artworks
-    const data = await getArtworksByExhibition(exhibition.id);
-    setArtworks(data);
+    // Reload artworks with a small delay to ensure Firestore has synced
+    console.log('🔄 Reloading artworks after creation...');
+    setTimeout(async () => {
+      try {
+        const data = await getArtworksByExhibition(exhibition.id);
+        console.log(`✅ Reloaded ${data.length} artworks`);
+        setArtworks(data);
+      } catch (error) {
+        console.error('❌ Error reloading artworks:', error);
+      }
+    }, 500);
   };
 
   const handleDelete = async () => {
