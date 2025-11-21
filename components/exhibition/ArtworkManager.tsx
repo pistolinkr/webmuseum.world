@@ -45,7 +45,7 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
   }, [exhibition.id, isOwner]);
 
   const handleSuccess = async () => {
-    setShowAddForm(false);
+    // Don't close the form - allow user to add another artwork
     setEditingArtwork(null);
     // Reload artworks with a small delay to ensure Firestore has synced
     console.log('🔄 Reloading artworks after creation...');
@@ -58,6 +58,16 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
         console.error('❌ Error reloading artworks:', error);
       }
     }, 500);
+  };
+
+  const handleAddAnother = () => {
+    // Keep form open, just reset it
+    // The form will reset itself after successful creation
+  };
+
+  const handleCancel = () => {
+    setShowAddForm(false);
+    setEditingArtwork(null);
   };
 
   const handleDelete = async () => {
@@ -104,10 +114,35 @@ export default function ArtworkManager({ exhibition }: ArtworkManagerProps) {
 
       {showAddForm && (
         <div className="artwork-manager__form-container">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '1rem'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 500 }}>
+              Add New Artwork
+            </h3>
+            <button
+              onClick={handleCancel}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-primary)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+              }}
+            >
+              Close
+            </button>
+          </div>
           <ArtworkForm
             exhibitionId={exhibition.id}
             onSuccess={handleSuccess}
-            onCancel={() => setShowAddForm(false)}
+            onCancel={handleCancel}
+            onAddAnother={handleAddAnother}
           />
         </div>
       )}

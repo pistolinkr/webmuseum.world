@@ -11,6 +11,7 @@ interface ArtworkFormProps {
   artwork?: Artwork;
   onSuccess?: () => void;
   onCancel?: () => void;
+  onAddAnother?: () => void; // Callback for adding another artwork
 }
 
 export default function ArtworkForm({
@@ -18,6 +19,7 @@ export default function ArtworkForm({
   artwork,
   onSuccess,
   onCancel,
+  onAddAnother,
 }: ArtworkFormProps) {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -132,24 +134,32 @@ export default function ArtworkForm({
         try {
           const artworkId = await createArtwork(artworkData);
           if (artworkId) {
-            onSuccess?.();
-            // Reset form
+            // Reset form for next artwork
             setFormData({
               title: '',
-              artist: '',
-              artistId: '',
+              artist: formData.artist, // Keep artist name for convenience
+              artistId: formData.artistId, // Keep artistId for convenience
               imageUrl: '',
               caption: '',
               description: '',
               year: '',
-              medium: '',
+              medium: formData.medium, // Keep medium for convenience
               dimensions: '',
-              genre: '',
-              tags: '',
+              genre: formData.genre, // Keep genre for convenience
+              tags: formData.tags, // Keep tags for convenience
               emotion: '',
             });
+            setError(''); // Clear any previous errors
+            setLoading(false);
+            
+            // Call onSuccess to refresh the list
+            onSuccess?.();
+            
+            // If onAddAnother is provided, don't close the form
+            // Otherwise, the form will stay open for adding another artwork
           } else {
             setError('Failed to create artwork');
+            setLoading(false);
           }
         } catch (createError: any) {
           console.error('Error in createArtwork:', createError);
@@ -161,6 +171,7 @@ export default function ArtworkForm({
           } else {
             setError('Failed to create artwork. Please try again.');
           }
+          setLoading(false);
         }
       }
     } catch (err: any) {
