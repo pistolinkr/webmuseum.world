@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { AnimatePresence } from 'framer-motion';
 import LandingHeader from './LandingHeader';
 
 const HIDDEN_ROUTES = new Set([
@@ -9,20 +10,19 @@ const HIDDEN_ROUTES = new Set([
   '/privacy',
 ]);
 
-// Check if current path is an exhibition page
-function isExhibitionPage(pathname: string | null): boolean {
-  if (!pathname) return false;
-  return pathname.startsWith('/exhibition/');
-}
-
 export default function LandingHeaderWrapper() {
   const pathname = usePathname();
-  const isExhibition = isExhibitionPage(pathname);
 
-  if (pathname && HIDDEN_ROUTES.has(pathname)) {
-    return null;
-  }
+  // Hide on auth routes and exhibition routes
+  const shouldHide = pathname && (
+    HIDDEN_ROUTES.has(pathname) ||
+    pathname.startsWith('/exhibition/')
+  );
 
-  return <LandingHeader isExhibitionPage={isExhibition} />;
+  return (
+    <AnimatePresence mode="wait">
+      {!shouldHide && <LandingHeader key="landing-header" />}
+    </AnimatePresence>
+  );
 }
 

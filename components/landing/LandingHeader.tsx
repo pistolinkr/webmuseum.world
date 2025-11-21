@@ -22,7 +22,7 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
   useEffect(() => {
     // Mark as mounted to avoid hydration mismatch
     setMounted(true);
-    
+
     const getTheme = () => {
       const theme = localStorage.getItem('theme');
       if (theme === 'light') return false;
@@ -48,7 +48,7 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
 
     mediaQuery.addEventListener('change', handleChange);
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Also listen for custom theme change event
     const handleThemeChange = () => {
       setIsDarkMode(getTheme());
@@ -65,16 +65,16 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
   useEffect(() => {
     // Only run on client side
     if (typeof window === 'undefined') return;
-    
+
     const headerHeight = 64; // 4rem = 64px
-    
+
     const handleScroll = () => {
       try {
         const scrollY = window.scrollY;
         // 스크롤이 헤더 높이만큼 내려가면 opacity가 0에서 1로 변경
         const opacity = Math.min(scrollY / headerHeight, 1);
         setScrollOpacity(opacity);
-        
+
         // CSS 변수로 스크롤 opacity 전달
         if (typeof document !== 'undefined') {
           document.documentElement.style.setProperty('--header-scroll-opacity', opacity.toString());
@@ -85,7 +85,7 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
     };
 
     handleScroll(); // 초기값 설정
-    
+
     // Safely add scroll listener
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', handleScroll, { passive: true });
@@ -101,15 +101,17 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
 
   return (
     <motion.header
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
+      initial={{ opacity: 0, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: '-100%' }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="landing-header"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
+        zIndex: 1100, // Ensure it's above the exhibition header (1000)
         transform: 'none',
       }}
     >
@@ -131,36 +133,36 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
           </TextRoll>
         </Link>
         <nav className="landing-header__nav">
-          <Link 
-            href="/discover" 
+          <Link
+            href="/discover"
             className={`landing-header__nav-link${pathname === '/discover' ? ' landing-header__nav-link--active' : ''}`}
             prefetch={true}
           >
             Discover
           </Link>
-          <Link 
-            href="/artist" 
+          <Link
+            href="/artist"
             className={`landing-header__nav-link${pathname === '/artist' || pathname?.startsWith('/artist/') ? ' landing-header__nav-link--active' : ''}`}
             prefetch={true}
           >
             Artists
           </Link>
-          <Link 
-            href="/explore" 
+          <Link
+            href="/explore"
             className={`landing-header__nav-link${pathname === '/explore' ? ' landing-header__nav-link--active' : ''}`}
             prefetch={true}
           >
             Explore
           </Link>
         </nav>
-        
+
         <div className="landing-header__auth">
           {loading ? (
             <span className="landing-header__auth-loading">Loading...</span>
           ) : currentUser ? (
             <div className="landing-header__user-menu">
-              <Link 
-                href="/account" 
+              <Link
+                href="/account"
                 className="landing-header__user-link"
                 prefetch={true}
               >

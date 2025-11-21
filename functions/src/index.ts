@@ -10,7 +10,7 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || functions.config().resend?.
 const WEB_MUSEUM_BRAND = {
   name: 'Web Museum',
   supportEmail: 'support@webmuseum.world',
-  domain: 'https://webmuseumworld.vercel.app',
+  domain: 'https://webmuseum.world',
 };
 
 if (!RESEND_API_KEY) {
@@ -18,7 +18,7 @@ if (!RESEND_API_KEY) {
 }
 
 function generateVerificationCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*()_+-=[]{}|;:,.<>?';
   let code = '';
   for (let i = 0; i < 4; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
