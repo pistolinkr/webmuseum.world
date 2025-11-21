@@ -70,11 +70,13 @@ export default function UserAccountPage() {
     async function loadExhibitions() {
       if (!currentUser) return;
       
+      console.log(`🔄 Loading exhibitions for user: ${currentUser.uid}`);
       try {
         const data = await getUserExhibitions(currentUser.uid);
+        console.log(`✅ Loaded ${data.length} exhibitions for account page`);
         setMyExhibitions(data);
       } catch (error) {
-        console.error('Error loading exhibitions:', error);
+        console.error('❌ Error loading exhibitions:', error);
       }
     }
     
@@ -96,11 +98,18 @@ export default function UserAccountPage() {
     localStorage.setItem('bookmarkedExhibitions', JSON.stringify(newBookmarks));
   };
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = async () => {
     setShowCreateForm(false);
-    // Reload exhibitions
+    // Reload exhibitions from Firestore
     if (currentUser) {
-      getUserExhibitions(currentUser.uid).then(setMyExhibitions);
+      console.log('🔄 Reloading exhibitions after creation...');
+      try {
+        const data = await getUserExhibitions(currentUser.uid);
+        console.log(`✅ Reloaded ${data.length} exhibitions from Firestore`);
+        setMyExhibitions(data);
+      } catch (error) {
+        console.error('❌ Error reloading exhibitions:', error);
+      }
     }
   };
 
