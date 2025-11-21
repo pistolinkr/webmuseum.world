@@ -91,28 +91,56 @@ export async function getAllExhibitions(userId?: string): Promise<Exhibition[]> 
     if (userId) {
       // Get exhibitions for a specific user
       // Query both ownerId (new) and userId (legacy) for backward compatibility
-      // Note: We query without orderBy first to avoid index requirements, then sort in memory
-      const [ownerIdQuery, userIdQuery] = await Promise.all([
-        getDocs(query(
+      console.log(`🔍 Querying exhibitions for user: ${userId}`);
+      
+      let ownerIdDocs: any[] = [];
+      let userIdDocs: any[] = [];
+      
+      try {
+        // Query by ownerId (new field)
+        const ownerIdQuerySnapshot = await getDocs(query(
           collection(firestoreDb, EXHIBITIONS_COLLECTION),
           where('ownerId', '==', userId)
-        )).catch(() => ({ docs: [] })),
-        getDocs(query(
+        ));
+        ownerIdDocs = ownerIdQuerySnapshot.docs;
+        console.log(`✅ Found ${ownerIdDocs.length} exhibitions with ownerId=${userId}`);
+      } catch (ownerIdError: any) {
+        console.warn(`⚠️ Error querying by ownerId:`, ownerIdError);
+        if (!isOfflineError(ownerIdError)) {
+          console.error('❌ Non-offline error querying by ownerId:', ownerIdError);
+        }
+      }
+      
+      try {
+        // Query by userId (legacy field)
+        const userIdQuerySnapshot = await getDocs(query(
           collection(firestoreDb, EXHIBITIONS_COLLECTION),
           where('userId', '==', userId)
-        )).catch(() => ({ docs: [] }))
-      ]);
+        ));
+        userIdDocs = userIdQuerySnapshot.docs;
+        console.log(`✅ Found ${userIdDocs.length} exhibitions with userId=${userId}`);
+      } catch (userIdError: any) {
+        console.warn(`⚠️ Error querying by userId:`, userIdError);
+        if (!isOfflineError(userIdError)) {
+          console.error('❌ Non-offline error querying by userId:', userIdError);
+        }
+      }
       
       // Combine results and remove duplicates
-      const allDocs = [...ownerIdQuery.docs, ...userIdQuery.docs];
+      const allDocs = [...ownerIdDocs, ...userIdDocs];
       const uniqueDocs = Array.from(
         new Map(allDocs.map(doc => [doc.id, doc])).values()
       );
       
-      exhibitions = uniqueDocs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Exhibition[];
+      console.log(`📊 Total unique exhibitions found: ${uniqueDocs.length} (ownerId: ${ownerIdDocs.length}, userId: ${userIdDocs.length})`);
+      
+      exhibitions = uniqueDocs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+        } as Exhibition;
+      });
       
       // Sort by createdAt descending (in memory)
       exhibitions.sort((a, b) => {
@@ -124,6 +152,11 @@ export async function getAllExhibitions(userId?: string): Promise<Exhibition[]> 
                      (b.createdAt as any)?.toMillis ? (b.createdAt as any).toMillis() : 0;
         return bTime - aTime;
       });
+      
+      // Log exhibition details for debugging
+      if (exhibitions.length > 0) {
+        console.log(`📋 Exhibition IDs:`, exhibitions.map(e => ({ id: e.id, ownerId: e.ownerId, userId: e.userId, title: e.title })));
+      }
     } else {
       // Get all public exhibitions
       const querySnapshot = await getDocs(query(
