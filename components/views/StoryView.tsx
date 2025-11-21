@@ -108,7 +108,7 @@ export default function StoryView({ artworks, exhibitionId, exhibition }: StoryV
   }
 
   return (
-    <div ref={containerRef} style={{ paddingTop: '4rem', paddingBottom: '8rem' }}>
+    <div ref={containerRef} style={{ paddingTop: '4rem', paddingBottom: '4rem' }}>
       {artworks.map((artwork, index) => (
         <section
           key={artwork.id}

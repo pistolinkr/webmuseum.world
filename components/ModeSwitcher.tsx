@@ -22,7 +22,7 @@ export default function ModeSwitcher({ exhibitionId, currentMode }: ModeSwitcher
     <nav
       style={{
         position: 'fixed',
-        bottom: 0,
+        top: 0,
         left: 0,
         right: 0,
         display: 'flex',
@@ -32,6 +32,7 @@ export default function ModeSwitcher({ exhibitionId, currentMode }: ModeSwitcher
         zIndex: 1000,
         gap: '1rem',
         backgroundColor: 'var(--bg-primary)',
+        borderBottom: '1px solid var(--border-primary)',
       }}
     >
       {modes.map(({ label, mode, path }) => (
