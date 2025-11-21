@@ -314,6 +314,23 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   padding-right: inherit;
 }
 
+.landing-header__container--exhibition {
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.landing-header__container--exhibition .landing-header__nav {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  background-color: var(--navbar-bg);
+  padding: 1rem 2rem;
+  backdrop-filter: blur(7px);
+  border-bottom: 1px solid var(--border-primary);
+}
+
 .landing-header__logo {
   font-size: 1.125rem;
   font-weight: 600;

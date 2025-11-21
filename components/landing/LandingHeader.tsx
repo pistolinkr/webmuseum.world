@@ -8,7 +8,11 @@ import { usePathname } from 'next/navigation';
 import { TextRoll } from '@/components/core/text-roll';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function LandingHeader() {
+interface LandingHeaderProps {
+  isExhibitionPage?: boolean;
+}
+
+export default function LandingHeader({ isExhibitionPage = false }: LandingHeaderProps = {}) {
   const pathname = usePathname();
   const [isDarkMode, setIsDarkMode] = useState(false); // Always start with false for SSR consistency
   const [mounted, setMounted] = useState(false);
@@ -109,7 +113,7 @@ export default function LandingHeader() {
         transform: 'none',
       }}
     >
-      <div className={`landing-header__container${!currentUser && !loading ? ' landing-header__container--guest' : ''}`}>
+      <div className={`landing-header__container${!currentUser && !loading ? ' landing-header__container--guest' : ''}${isExhibitionPage ? ' landing-header__container--exhibition' : ''}`}>
         <Link href="/" className="landing-header__logo" prefetch={true}>
           <Image
             src={mounted && isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
