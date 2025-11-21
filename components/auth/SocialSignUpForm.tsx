@@ -235,7 +235,6 @@ export default function SocialSignUpForm({ onSuccess, onSwitchToLogin }: SocialS
         return 'Opening Apple sign-in...';
       case 'github':
         return 'Opening GitHub sign-in...';
-      case 'email':
       case 'apply':
         return 'Sending verification code...';
       case 'signup':
