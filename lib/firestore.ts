@@ -157,22 +157,84 @@ export async function getAllExhibitions(userId?: string): Promise<Exhibition[]> 
       if (exhibitions.length > 0) {
         console.log(`📋 Exhibition IDs:`, exhibitions.map(e => ({ id: e.id, ownerId: e.ownerId, userId: e.userId, title: e.title })));
       }
+      
+      // Load artworks for all exhibitions in parallel
+      console.log(`✅ Loading artworks for ${exhibitions.length} exhibitions...`);
+      const exhibitionsWithArtworks = await Promise.all(
+        exhibitions.map(async (exhibition) => {
+          try {
+            const artworks = await getArtworksByExhibition(exhibition.id);
+            return {
+              ...exhibition,
+              artworks: artworks || [],
+            };
+          } catch (error) {
+            console.warn(`⚠️ Error loading artworks for exhibition ${exhibition.id}:`, error);
+            return {
+              ...exhibition,
+              artworks: [],
+            };
+          }
+        })
+      );
+      exhibitions = exhibitionsWithArtworks;
+      console.log(`✅ Loaded artworks for all user exhibitions`);
     } else {
       // Get all public exhibitions
+      // Query without orderBy to avoid index requirements and work better with optional fields
+      // We'll sort in memory instead
       const querySnapshot = await getDocs(query(
         collection(firestoreDb, EXHIBITIONS_COLLECTION),
-        where('isPublic', '==', true),
-        orderBy('date', 'desc')
+        where('isPublic', '==', true)
       ));
       
       exhibitions = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Exhibition[];
+      
+      // Sort by date descending (if available), then by createdAt descending
+      exhibitions.sort((a, b) => {
+        // First try to sort by date
+        if (a.date && b.date) {
+          return b.date.localeCompare(a.date);
+        }
+        if (a.date) return -1;
+        if (b.date) return 1;
+        
+        // If no date, sort by createdAt
+        const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : 
+                     (a.createdAt as any)?.seconds ? (a.createdAt as any).seconds * 1000 : 
+                     (a.createdAt as any)?.toMillis ? (a.createdAt as any).toMillis() : 0;
+        const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : 
+                     (b.createdAt as any)?.seconds ? (b.createdAt as any).seconds * 1000 : 
+                     (b.createdAt as any)?.toMillis ? (b.createdAt as any).toMillis() : 0;
+        return bTime - aTime;
+      });
     }
     
+    // Load artworks for all exhibitions in parallel
     if (exhibitions.length > 0) {
-      console.log(`✅ Firebase: Loaded ${exhibitions.length} exhibitions from Firestore`);
+      console.log(`✅ Firebase: Loaded ${exhibitions.length} exhibitions from Firestore, loading artworks...`);
+      const exhibitionsWithArtworks = await Promise.all(
+        exhibitions.map(async (exhibition) => {
+          try {
+            const artworks = await getArtworksByExhibition(exhibition.id);
+            return {
+              ...exhibition,
+              artworks: artworks || [],
+            };
+          } catch (error) {
+            console.warn(`⚠️ Error loading artworks for exhibition ${exhibition.id}:`, error);
+            return {
+              ...exhibition,
+              artworks: [],
+            };
+          }
+        })
+      );
+      exhibitions = exhibitionsWithArtworks;
+      console.log(`✅ Firebase: Loaded artworks for all exhibitions`);
     } else {
       console.log('⚠️ Firebase: No exhibitions found in Firestore, will use mock data');
     }
