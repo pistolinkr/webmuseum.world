@@ -22,9 +22,9 @@ export default async function ArtistProfilePage({ params }: { params: { id: stri
         location: 'Italy (Urbino)', // This could come from artwork or artist data
         profileImageUrl: artwork.imageUrl, // Use artwork image as profile image
         socialLinks: {
-          website: artist?.website,
-          instagram: artist?.socialLinks?.instagram,
-          twitter: artist?.socialLinks?.twitter,
+          website: undefined,
+          instagram: undefined,
+          twitter: undefined,
         },
       };
       break;
