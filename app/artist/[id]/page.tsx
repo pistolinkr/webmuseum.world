@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { getAllExhibitions } from '@/lib/firestore';
 import { Artist } from '@/types';
+import ArtistProfileHeader from '@/components/artist/ArtistProfileHeader';
+import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
+import ArtistStoryCard from '@/components/artist/ArtistStoryCard';
+import ExhibitionGridCard from '@/components/artist/ExhibitionGridCard';
 
 export default async function ArtistProfilePage({ params }: { params: { id: string } }) {
   const allExhibitions = await getAllExhibitions();
@@ -14,6 +17,15 @@ export default async function ArtistProfilePage({ params }: { params: { id: stri
       artist = {
         id: artwork.artistId || params.id,
         name: artwork.artist,
+        bio: artwork.description, // Use artwork description as bio if artist bio not available
+        category: artwork.genre?.[0], // Use first genre as category
+        location: 'Italy (Urbino)', // This could come from artwork or artist data
+        profileImageUrl: artwork.imageUrl, // Use artwork image as profile image
+        socialLinks: {
+          website: artist?.website,
+          instagram: artist?.socialLinks?.instagram,
+          twitter: artist?.socialLinks?.twitter,
+        },
       };
       break;
     }
@@ -44,64 +56,55 @@ export default async function ArtistProfilePage({ params }: { params: { id: stri
 
   return (
     <main className="artist-profile-page">
+      <ArtistProfileHeader 
+        artist={artist}
+        isFollowing={false}
+        onFollow={() => {
+          // TODO: Implement follow functionality
+          console.log('Follow artist');
+        }}
+        onSubscribe={() => {
+          // TODO: Implement subscribe functionality
+          console.log('Subscribe to artist');
+        }}
+      />
+      
       <div className="artist-profile-page__container">
-        <div className="artist-profile-page__header">
-          {artist.profileImageUrl && (
-            <div className="artist-profile-page__image">
-              <img src={artist.profileImageUrl} alt={artist.name} />
-            </div>
-          )}
-          <div className="artist-profile-page__info">
-            <h1 className="artist-profile-page__name">{artist.name}</h1>
-            {artist.bio && (
-              <p className="artist-profile-page__bio">{artist.bio}</p>
-            )}
-            {artist.socialLinks && (
-              <div className="artist-profile-page__social">
-                {artist.website && (
-                  <a href={artist.website} target="_blank" rel="noopener noreferrer" className="artist-profile-page__link">
-                    Website
-                  </a>
-                )}
-                {artist.socialLinks.instagram && (
-                  <a href={`https://instagram.com/${artist.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="artist-profile-page__link">
-                    Instagram
-                  </a>
-                )}
-                {artist.socialLinks.twitter && (
-                  <a href={`https://twitter.com/${artist.socialLinks.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="artist-profile-page__link">
-                    Twitter
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="artist-profile-page__content">
+          <div className="artist-profile-page__sidebar">
+            <ArtistInfoCard artist={artist} />
+            <ArtistStoryCard artist={artist} />
         </div>
 
-        {artistExhibitions.length > 0 && (
+          <div className="artist-profile-page__main">
+            {artistExhibitions.length > 0 ? (
           <section className="artist-profile-page__exhibitions">
-            <h2 className="artist-profile-page__section-title">Exhibitions</h2>
+                <div className="artist-profile-page__section-header">
+                  <h2 className="artist-profile-page__section-title">
+                    Exhibitions
+                    <span className="artist-profile-page__section-count">
+                      ({artistExhibitions.length})
+                    </span>
+                  </h2>
+                </div>
             <div className="artist-profile-page__exhibitions-grid">
               {artistExhibitions.map((exhibition) => (
-                <Link 
+                    <ExhibitionGridCard 
                   key={exhibition.id}
-                  href={`/exhibition/${exhibition.id}/story`}
-                  className="artist-exhibition-card"
-                >
-                  <h3 className="artist-exhibition-card__title">{exhibition.title}</h3>
-                  {exhibition.description && (
-                    <p className="artist-exhibition-card__description">
-                      {exhibition.description}
-                    </p>
-                  )}
-                  {exhibition.date && (
-                    <p className="artist-exhibition-card__date">{exhibition.date}</p>
-                  )}
-                </Link>
+                      exhibition={exhibition}
+                    />
               ))}
             </div>
           </section>
-        )}
+            ) : (
+              <section className="artist-profile-page__exhibitions">
+                <div className="artist-profile-page__empty">
+                  <p>No exhibitions available yet.</p>
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );

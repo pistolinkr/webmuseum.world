@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getUserExhibitions, deleteExhibition } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,82 +11,223 @@ import ExhibitionDeleteModal from '@/components/exhibition/ExhibitionDeleteModal
 import ProfileEditForm from '@/components/profile/ProfileEditForm';
 import SettingsPanel from '@/components/settings/SettingsPanel';
 import { uploadToFirebaseStorage, getUserProfilePicturePath, getUserCoverImagePath } from '@/lib/firebaseStorage';
-import HeroSection from '@/components/account/HeroSection';
-import DashboardStats from '@/components/account/DashboardStats';
-import ArtistSidebar from '@/components/account/ArtistSidebar';
-import ExhibitionGrid from '@/components/account/ExhibitionGrid';
-import { motion, AnimatePresence } from 'framer-motion';
+import { GlowingStarsBackground } from '@/components/ui/glowing-stars';
 
 export default function UserAccountPage() {
   const router = useRouter();
-  const { currentUser, userData, loading: authLoading, updateUserProfile, signOut } = useAuth();
+  const { currentUser, userData, loading: authLoading, signOut } = useAuth();
+  const [bookmarkedExhibitions, setBookmarkedExhibitions] = useState<string[]>([]);
   const [myExhibitions, setMyExhibitions] = useState<Exhibition[]>([]);
-
-  // UI States
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingExhibition, setEditingExhibition] = useState<Exhibition | null>(null);
   const [deletingExhibition, setDeletingExhibition] = useState<Exhibition | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<'exhibitions' | 'about' | 'settings'>('exhibitions');
+  const [editFormData, setEditFormData] = useState({
+    username: '',
+    displayName: '',
+    bio: '',
+    avatarUrl: '',
+    coverImageUrl: '',
+  });
+  const [showAvatarUrlInput, setShowAvatarUrlInput] = useState(false);
+  const [showCoverUrlInput, setShowCoverUrlInput] = useState(false);
 
-  // Upload States
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
-
-  // Redirect if not logged in
+  // Load bookmarks immediately (synchronous, fast)
   useEffect(() => {
-    if (!authLoading && !currentUser) {
-      router.replace('/');
-    }
-  }, [currentUser, authLoading, router]);
-
-  // Load Exhibitions
-  useEffect(() => {
-    async function loadExhibitions() {
-      if (!currentUser) return;
-      try {
-        const data = await getUserExhibitions(currentUser.uid);
-        setMyExhibitions(data);
-      } catch (error) {
-        console.error('Error loading exhibitions:', error);
+    if (typeof window !== 'undefined') {
+      const savedBookmarks = localStorage.getItem('bookmarkedExhibitions');
+      if (savedBookmarks) {
+        try {
+          setBookmarkedExhibitions(JSON.parse(savedBookmarks));
+        } catch (error) {
+          console.error('Error parsing bookmarks:', error);
+        }
       }
     }
+  }, []); // Run once on mount
+
+  // Track if redirect is in progress to prevent multiple redirects
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Load exhibitions in background after auth is ready
+  useEffect(() => {
+    if (authLoading) return;
+    if (isRedirecting) return; // Prevent multiple redirects
+
+    // Wait a bit to ensure auth state is fully initialized
+    const checkAuth = setTimeout(() => {
+      if (!currentUser && !authLoading) {
+        console.log('No current user, redirecting to home');
+        setIsRedirecting(true);
+        // Use replace instead of push to avoid adding to history
+        router.replace('/');
+      }
+    }, 100);
+
+    // Load exhibitions in background (non-blocking)
+    // UI will render immediately without waiting for exhibitions
+    async function loadExhibitions() {
+      if (!currentUser) return;
+
+      console.log(`🔄 Loading exhibitions for user: ${currentUser.uid}`);
+      try {
+        const data = await getUserExhibitions(currentUser.uid);
+        console.log(`✅ Loaded ${data.length} exhibitions for account page`);
+        setMyExhibitions(data);
+      } catch (error) {
+        console.error('❌ Error loading exhibitions:', error);
+      }
+    }
+
     if (currentUser) {
       loadExhibitions();
     }
-  }, [currentUser]);
 
-  // Handlers
+    return () => {
+      clearTimeout(checkAuth);
+    };
+  }, [currentUser, authLoading, router, isRedirecting]);
+
+  const toggleBookmark = (exhibitionId: string) => {
+    const newBookmarks = bookmarkedExhibitions.includes(exhibitionId)
+      ? bookmarkedExhibitions.filter(id => id !== exhibitionId)
+      : [...bookmarkedExhibitions, exhibitionId];
+
+    setBookmarkedExhibitions(newBookmarks);
+    localStorage.setItem('bookmarkedExhibitions', JSON.stringify(newBookmarks));
+  };
+
   const handleCreateSuccess = async () => {
     setShowCreateForm(false);
+    // Reload exhibitions from Firestore
     if (currentUser) {
-      const data = await getUserExhibitions(currentUser.uid);
-      setMyExhibitions(data);
+      console.log('🔄 Reloading exhibitions after creation...');
+      try {
+        const data = await getUserExhibitions(currentUser.uid);
+        console.log(`✅ Reloaded ${data.length} exhibitions from Firestore`);
+        setMyExhibitions(data);
+      } catch (error) {
+        console.error('❌ Error reloading exhibitions:', error);
+      }
     }
   };
 
-  const handleEditSuccess = async () => {
+  const handleEditSuccess = () => {
     setEditingExhibition(null);
+    // Reload exhibitions
     if (currentUser) {
-      const data = await getUserExhibitions(currentUser.uid);
-      setMyExhibitions(data);
+      getUserExhibitions(currentUser.uid).then(setMyExhibitions);
     }
   };
 
-  const handleDeleteSuccess = async () => {
+  const handleDeleteSuccess = () => {
     setDeletingExhibition(null);
+    // Reload exhibitions
     if (currentUser) {
-      const data = await getUserExhibitions(currentUser.uid);
-      setMyExhibitions(data);
+      getUserExhibitions(currentUser.uid).then(setMyExhibitions);
     }
   };
 
-  const handleProfileUpdateSuccess = () => {
-    setEditingProfile(false);
+  const { updateUserProfile } = useAuth();
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const handleEditClick = () => {
+    console.log('Edit button clicked, setting editingProfile to true');
+    if (userData) {
+      setEditFormData({
+        username: userData.username || '',
+        displayName: userData.displayName || userData.name || '',
+        bio: userData.bio || '',
+        avatarUrl: userData.avatarUrl || '',
+        coverImageUrl: userData.coverImageUrl || '',
+      });
+    }
+    setEditingProfile(true);
   };
 
-  const handleAvatarUpload = async (file: File) => {
-    if (!currentUser) return;
+  const handleProfileSave = async () => {
+    console.log('Save button clicked');
+    console.log('Current state:', {
+      currentUser: !!currentUser,
+      userData: !!userData,
+      currentUserId: currentUser?.uid,
+      userDataId: userData?.id,
+      editFormData
+    });
+
+    if (!currentUser) {
+      console.error('Cannot save: currentUser is missing');
+      alert('You must be logged in to save your profile. Please sign in again.');
+      return;
+    }
+
+    if (savingProfile) {
+      console.log('Save already in progress, ignoring click');
+      return;
+    }
+
+    setSavingProfile(true);
+
+    try {
+      console.log('Updating profile with data:', editFormData);
+
+      // Prepare updates object - only include fields that have values
+      const updates: Partial<User> = {};
+
+      if (editFormData.username.trim()) {
+        updates.username = editFormData.username.trim();
+      }
+      if (editFormData.displayName.trim()) {
+        updates.displayName = editFormData.displayName.trim();
+      }
+      if (editFormData.bio.trim()) {
+        updates.bio = editFormData.bio.trim();
+      }
+      if (editFormData.avatarUrl.trim()) {
+        updates.avatarUrl = editFormData.avatarUrl.trim();
+      }
+      if (editFormData.coverImageUrl.trim()) {
+        updates.coverImageUrl = editFormData.coverImageUrl.trim();
+      }
+
+      console.log('Prepared updates:', updates);
+
+      // updateUserProfile handles offline mode automatically
+      await updateUserProfile(updates);
+      console.log('Profile updated successfully');
+
+      // Always exit edit mode after save attempt (success or failure)
+      setEditingProfile(false);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      console.error('Error details:', {
+        code: error?.code,
+        message: error?.message,
+        stack: error?.stack
+      });
+
+      const errorMessage = error?.message || 'Failed to save profile. Please try again.';
+      alert(`Error: ${errorMessage}`);
+
+      // Still exit edit mode even on error so user can try again
+      setEditingProfile(false);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
     if (file.size > 10 * 1024 * 1024) {
       alert('Image size must be less than 10MB');
       return;
@@ -95,21 +237,53 @@ export default function UserAccountPage() {
     try {
       const extension = file.name.split('.').pop() || 'jpg';
       const path = getUserProfilePicturePath(currentUser.uid, extension);
-      const imageUrl = await uploadToFirebaseStorage(file, path);
+
+      console.log('Starting avatar upload...');
+      const imageUrl = await uploadToFirebaseStorage(file, path, (progress) => {
+        console.log('Avatar upload progress:', Math.round(progress), '%');
+      });
 
       if (imageUrl) {
-        await updateUserProfile({ avatarUrl: imageUrl });
+        console.log('Avatar uploaded successfully:', imageUrl);
+        setEditFormData(prev => ({ ...prev, avatarUrl: imageUrl }));
+        // URL is saved in editFormData, will be saved to Firestore when user clicks Save
+      } else {
+        throw new Error('Upload completed but no URL was returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      alert('Failed to upload avatar');
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
+
+      let errorMessage = 'Failed to upload image. ';
+      if (error.message) {
+        errorMessage += error.message;
+      } else if (error.code) {
+        errorMessage += `Error code: ${error.code}`;
+      } else {
+        errorMessage += 'Please check Firebase Storage configuration and browser console for details.';
+      }
+
+      alert(errorMessage);
     } finally {
       setUploadingAvatar(false);
+      // Reset input
+      e.target.value = '';
     }
   };
 
-  const handleCoverUpload = async (file: File) => {
-    if (!currentUser) return;
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
     if (file.size > 10 * 1024 * 1024) {
       alert('Image size must be less than 10MB');
       return;
@@ -119,175 +293,522 @@ export default function UserAccountPage() {
     try {
       const extension = file.name.split('.').pop() || 'jpg';
       const path = getUserCoverImagePath(currentUser.uid, extension);
-      const imageUrl = await uploadToFirebaseStorage(file, path);
+
+      console.log('Starting cover upload...');
+      const imageUrl = await uploadToFirebaseStorage(file, path, (progress) => {
+        console.log('Cover upload progress:', Math.round(progress), '%');
+      });
 
       if (imageUrl) {
-        await updateUserProfile({ coverImageUrl: imageUrl });
+        console.log('Cover uploaded successfully:', imageUrl);
+        setEditFormData(prev => ({ ...prev, coverImageUrl: imageUrl }));
+        // URL is saved in editFormData, will be saved to Firestore when user clicks Save
+      } else {
+        throw new Error('Upload completed but no URL was returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading cover:', error);
-      alert('Failed to upload cover image');
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
+
+      let errorMessage = 'Failed to upload image. ';
+      if (error.message) {
+        errorMessage += error.message;
+      } else if (error.code) {
+        errorMessage += `Error code: ${error.code}`;
+      } else {
+        errorMessage += 'Please check Firebase Storage configuration and browser console for details.';
+      }
+
+      alert(errorMessage);
     } finally {
       setUploadingCover(false);
+      // Reset input
+      e.target.value = '';
     }
   };
 
-  // Loading State
-  if (authLoading || !currentUser || !userData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-black">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-800 rounded-full mb-4"></div>
-          <div className="h-4 w-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculate Stats (Mock + Real)
-  const stats = {
-    views: myExhibitions.reduce((acc, ex) => acc + (ex.views || 0), 0) + 1240, // Mock base
-    subscribers: 42, // Mock
-    artworks: myExhibitions.reduce((acc, ex) => acc + (ex.artworks?.length || 0), 0),
-    likes: myExhibitions.reduce((acc, ex) => acc + (ex.likes || 0), 0) + 85, // Mock base
+  const handleProfileUpdateSuccess = () => {
+    setEditingProfile(false);
+    // User data will be reloaded automatically by AuthContext
   };
 
+  useEffect(() => {
+    if (userData && !editingProfile) {
+      console.log('Updating editFormData from userData:', userData);
+      setEditFormData({
+        username: userData.username || '',
+        displayName: userData.displayName || userData.name || '',
+        bio: userData.bio || '',
+        avatarUrl: userData.avatarUrl || '',
+        coverImageUrl: userData.coverImageUrl || '',
+      });
+    }
+  }, [userData, editingProfile]);
+
+  // Show loading only while auth is initializing or redirecting
+  if (authLoading || isRedirecting) {
+    return <div className="account-page__loading">Loading...</div>;
+  }
+
+  // Show loading while checking auth (give it a moment for auth to initialize)
+  if (!currentUser) {
+    // Wait a bit before showing nothing (redirect is handled in useEffect)
+    // Don't render anything that might cause errors during redirect
+    return <div className="account-page__loading">Loading...</div>;
+  }
+
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-black pb-20">
-      {/* Hero Section */}
-      <HeroSection
-        user={userData}
-        isOwner={true}
-        onEditProfile={() => setEditingProfile(true)}
-        onUploadCover={handleCoverUpload}
-        onUploadAvatar={handleAvatarUpload}
-        uploadingCover={uploadingCover}
-        uploadingAvatar={uploadingAvatar}
-      />
-
-      {/* Dashboard Stats (Floating) */}
-      <DashboardStats
-        stats={stats}
-        onCreateExhibition={() => setShowCreateForm(true)}
-      />
-
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Main Content: Exhibition Catalog */}
-          <div className="lg:col-span-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-serif font-bold text-black dark:text-white">
-                Curated Collections
-              </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="lg:hidden px-4 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-full"
-                >
-                  Settings
-                </button>
+    <main className="account-page">
+      <div className="account-page__container">
+        {/* Cover Image */}
+        <div className="account-page__cover">
+          <div
+            className="account-page__cover-image"
+            style={{
+              backgroundImage: editingProfile && editFormData.coverImageUrl
+                ? `url(${editFormData.coverImageUrl})`
+                : userData?.coverImageUrl
+                  ? `url(${userData.coverImageUrl})`
+                  : `url(/web_museum_static_banner_.png)`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'top center',
+            }}
+          >
+            {editingProfile && (
+              <div className="account-page__cover-upload-controls">
+                {!showCoverUrlInput ? (
+                  <>
+                    <label className="account-page__cover-upload">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverUpload}
+                        disabled={uploadingCover || uploadingAvatar}
+                        style={{ display: 'none' }}
+                      />
+                      <div className={`account-page__cover-upload-button ${uploadingCover ? 'account-page__cover-upload-button--uploading' : ''}`}>
+                        {uploadingCover ? 'Uploading...' : 'Change Cover'}
+                      </div>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowCoverUrlInput(true)}
+                      className="account-page__cover-url-button"
+                      disabled={uploadingCover || uploadingAvatar}
+                    >
+                      Or Enter URL
+                    </button>
+                  </>
+                ) : (
+                  <div className="account-page__cover-url-input-wrapper">
+                    <input
+                      type="url"
+                      placeholder="Enter cover image URL"
+                      value={editFormData.coverImageUrl}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, coverImageUrl: e.target.value }))}
+                      className="account-page__cover-url-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCoverUrlInput(false)}
+                      className="account-page__cover-url-cancel"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Profile Header Section */}
+        <div className="account-page__header">
+          <div className="account-page__header-content">
+            {/* Profile Avatar */}
+            <div className="account-page__avatar-section">
+              <label className={`account-page__avatar-label ${editingProfile ? 'account-page__avatar-label--editable' : ''}`}>
+                {(editingProfile ? editFormData.avatarUrl : userData?.avatarUrl) ? (
+                  <img
+                    src={editingProfile ? editFormData.avatarUrl : (userData?.avatarUrl || '')}
+                    alt={userData?.displayName || userData?.name || currentUser?.email || 'Profile'}
+                    className="account-page__profile-avatar"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="account-page__profile-avatar account-page__profile-avatar--placeholder"
+                    style={{
+                      backgroundImage: 'url(/web_museum_static_profile-avatar.png)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'top center',
+                    }}
+                  >
+                  </div>
+                )}
+                {editingProfile && (
+                  <div className="account-page__avatar-upload-controls">
+                    {!showAvatarUrlInput ? (
+                      <>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          disabled={uploadingAvatar || uploadingCover}
+                          style={{ display: 'none' }}
+                          id="avatar-file-input"
+                        />
+                        <label htmlFor="avatar-file-input" className="account-page__avatar-upload-overlay">
+                          <div className={`account-page__avatar-upload-text ${uploadingAvatar ? 'account-page__avatar-upload-overlay--uploading' : ''}`}>
+                            {uploadingAvatar ? 'Uploading...' : 'Change Photo'}
+                          </div>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAvatarUrlInput(true)}
+                          className="account-page__avatar-url-button"
+                          disabled={uploadingAvatar || uploadingCover}
+                        >
+                          Or Enter URL
+                        </button>
+                      </>
+                    ) : (
+                      <div className="account-page__avatar-url-input-wrapper">
+                        <input
+                          type="url"
+                          placeholder="Enter avatar image URL"
+                          value={editFormData.avatarUrl}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, avatarUrl: e.target.value }))}
+                          className="account-page__avatar-url-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAvatarUrlInput(false)}
+                          className="account-page__avatar-url-cancel"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </label>
             </div>
 
-            <ExhibitionGrid
-              exhibitions={myExhibitions}
-              isOwner={true}
-              onEdit={setEditingExhibition}
-              onDelete={setDeletingExhibition}
-              onCreate={() => setShowCreateForm(true)}
-            />
-          </div>
+            {/* Profile Info */}
+            <div className="account-page__profile-info">
+              <div className="account-page__profile-header">
+                <div className="account-page__profile-name-section">
+                  {editingProfile ? (
+                    <div className="account-page__profile-edit-fields">
+                      <div className="account-page__profile-input-wrapper">
+                        <span className="account-page__profile-input-prefix">@</span>
+                        <input
+                          type="text"
+                          placeholder="username"
+                          value={editFormData.username.replace(/^@/, '')}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/^@/, '').replace(/[^a-zA-Z0-9_]/g, '');
+                            setEditFormData({ ...editFormData, username: value });
+                          }}
+                          className="account-page__profile-input account-page__profile-input--username"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Display Name"
+                        value={editFormData.displayName}
+                        onChange={(e) => setEditFormData({ ...editFormData, displayName: e.target.value })}
+                        className="account-page__profile-input account-page__profile-input--displayname"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <h1 className="account-page__profile-name">
+                        {userData?.displayName || userData?.name || currentUser?.email || 'User'}
+                      </h1>
+                      {userData?.username && (
+                        <p className="account-page__profile-username">@{userData.username}</p>
+                      )}
+                    </>
+                  )}
+                  <div className="account-page__profile-stats">
+                    <div className="account-page__stat-item">
+                      <span className="account-page__stat-number">{myExhibitions.length}</span>
+                      <span className="account-page__stat-text">Exhibitions</span>
+                    </div>
+                    <div className="account-page__stat-item">
+                      <span className="account-page__stat-number">{myExhibitions.reduce((acc, ex) => acc + (ex.artworks?.length || 0), 0)}</span>
+                      <span className="account-page__stat-text">Artworks</span>
+                    </div>
+                    <div className="account-page__stat-item">
+                      <span className="account-page__stat-number">{bookmarkedExhibitions.length}</span>
+                      <span className="account-page__stat-text">Bookmarks</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={editingProfile ? handleProfileSave : handleEditClick}
+                  className="account-page__edit-profile-button"
+                  disabled={savingProfile || (editingProfile && (uploadingAvatar || uploadingCover))}
+                  type="button"
+                >
+                  {savingProfile ? 'Saving...' : editingProfile ? 'Save' : 'Edit Profile'}
+                </button>
+              </div>
 
-          {/* Sidebar: Artist Info & Settings */}
-          <div className="hidden lg:block lg:col-span-4 space-y-8">
-            <ArtistSidebar user={userData} isOwner={true} />
-
-            {/* Settings Link */}
-            <div className="pt-8 border-t border-gray-200 dark:border-gray-800">
-              <button
-                onClick={() => setShowSettings(true)}
-                className="flex items-center gap-2 text-gray-500 hover:text-black dark:hover:text-white transition-colors"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                Gallery Settings
-              </button>
+              {userData && (
+                <div className="account-page__profile-details">
+                  {editingProfile ? (
+                    <textarea
+                      placeholder="Bio"
+                      value={editFormData.bio}
+                      onChange={(e) => setEditFormData({ ...editFormData, bio: e.target.value })}
+                      className="account-page__profile-textarea"
+                      rows={3}
+                    />
+                  ) : (
+                    userData?.bio && (
+                      <p className="account-page__profile-bio">{userData.bio}</p>
+                    )
+                  )}
+                  {!editingProfile && (
+                    <div className="account-page__profile-meta">
+                      {userData?.location && (
+                        <span className="account-page__profile-location">📍 {userData.location}</span>
+                      )}
+                      {userData?.category && (
+                        <span className="account-page__profile-category">{userData.category}</span>
+                      )}
+                      {currentUser && (
+                        <Link
+                          href={`/user/${currentUser.uid}`}
+                          className="account-page__view-profile-link"
+                          prefetch={true}
+                        >
+                          View Public Profile →
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modals */}
-      <AnimatePresence>
-        {(showCreateForm || editingExhibition) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+        {/* Tab Navigation */}
+        <div className="account-page__tabs">
+          <button
+            className={`account-page__tab ${activeTab === 'exhibitions' ? 'account-page__tab--active' : ''}`}
+            onClick={() => setActiveTab('exhibitions')}
           >
-            <div className="w-full max-w-4xl bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl">
-              <ExhibitionForm
-                exhibition={editingExhibition || undefined}
-                onSuccess={editingExhibition ? handleEditSuccess : handleCreateSuccess}
-                onCancel={() => {
-                  setShowCreateForm(false);
-                  setEditingExhibition(null);
-                }}
-              />
+            Exhibitions
+          </button>
+          <button
+            className={`account-page__tab ${activeTab === 'about' ? 'account-page__tab--active' : ''}`}
+            onClick={() => setActiveTab('about')}
+          >
+            About
+          </button>
+          <button
+            className={`account-page__tab ${activeTab === 'settings' ? 'account-page__tab--active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            Settings
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="account-page__content">
+          {activeTab === 'exhibitions' && (
+            <div className="account-page__tab-content">
+              {editingProfile && userData && (
+                <div className="account-page__form-container">
+                  <ProfileEditForm
+                    user={userData}
+                    onSuccess={handleProfileUpdateSuccess}
+                    onCancel={() => setEditingProfile(false)}
+                  />
+                </div>
+              )}
+
+              {!editingProfile && (
+                <>
+                  {showCreateForm && (
+                    <div className="account-page__form-container">
+                      <ExhibitionForm
+                        onSuccess={handleCreateSuccess}
+                        onCancel={() => setShowCreateForm(false)}
+                      />
+                    </div>
+                  )}
+
+                  {editingExhibition && (
+                    <div className="account-page__form-container">
+                      <ExhibitionForm
+                        exhibition={editingExhibition}
+                        onSuccess={handleEditSuccess}
+                        onCancel={() => setEditingExhibition(null)}
+                      />
+                    </div>
+                  )}
+
+                  {!showCreateForm && !editingExhibition && (
+                    <>
+                      <div className="account-page__section-header">
+                        <h2 className="account-page__section-title">My Exhibitions</h2>
+                        <button
+                          onClick={() => setShowCreateForm(true)}
+                          className="account-page__create-button"
+                        >
+                          + Create New
+                        </button>
+                      </div>
+
+                      {myExhibitions.length > 0 ? (
+                        <div className="account-page__grid">
+                          {myExhibitions.map((exhibition, index) => (
+                            <div
+                              key={exhibition.id}
+                              className="account-exhibition-card"
+                              style={{ animationDelay: `${index * 0.05}s` }}
+                            >
+                              <Link
+                                href={`/exhibition/${exhibition.id}/story`}
+                                className="account-exhibition-card__link"
+                                prefetch={true}
+                              >
+                                <div className="account-exhibition-card__image-wrapper">
+                                  {exhibition.thumbnailUrl ? (
+                                    <img
+                                      src={exhibition.thumbnailUrl}
+                                      alt={exhibition.title}
+                                      className="account-exhibition-card__thumbnail"
+                                    />
+                                  ) : (
+                                    <div className="account-exhibition-card__thumbnail account-exhibition-card__thumbnail--placeholder">
+                                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <path d="M3 9h18M9 3v18" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                  <div className="account-exhibition-card__overlay">
+                                    {exhibition.isPublic !== false ? (
+                                      <span className="account-exhibition-card__badge account-exhibition-card__badge--public">
+                                        Public
+                                      </span>
+                                    ) : (
+                                      <span className="account-exhibition-card__badge account-exhibition-card__badge--private">
+                                        Private
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="account-exhibition-card__content">
+                                  <h3 className="account-exhibition-card__title">{exhibition.title}</h3>
+                                  {exhibition.artworks && exhibition.artworks.length > 0 && (
+                                    <div className="account-exhibition-card__meta">
+                                      <span className="account-exhibition-card__artwork-count">
+                                        {exhibition.artworks.length} {exhibition.artworks.length === 1 ? 'artwork' : 'artworks'}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                              <div className="account-exhibition-card__actions">
+                                <button
+                                  onClick={() => setEditingExhibition(exhibition)}
+                                  className="account-exhibition-card__action account-exhibition-card__action--edit"
+                                  aria-label="Edit exhibition"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => setDeletingExhibition(exhibition)}
+                                  className="account-exhibition-card__action account-exhibition-card__action--delete"
+                                  aria-label="Delete exhibition"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="account-page__empty">
+                          <div className="account-page__empty-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <path d="M3 9h18M9 3v18" />
+                            </svg>
+                          </div>
+                          <h3 className="account-page__empty-title">No exhibitions yet</h3>
+                          <p className="account-page__empty-text">Start showcasing your art by creating your first exhibition.</p>
+                          <button
+                            onClick={() => setShowCreateForm(true)}
+                            className="account-page__create-button account-page__create-button--empty"
+                          >
+                            Create Your First Exhibition
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
             </div>
-          </motion.div>
-        )}
+          )}
 
-        {editingProfile && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
-          >
-            <div className="w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl p-6">
-              <h2 className="text-2xl font-serif font-bold mb-6">Edit Profile</h2>
-              <ProfileEditForm
-                user={userData}
-                onSuccess={handleProfileUpdateSuccess}
-                onCancel={() => setEditingProfile(false)}
-              />
+          {activeTab === 'about' && (
+            <div className="account-page__tab-content">
+              {userData && (
+                <div className="account-page__about">
+                  <ProfileEditForm
+                    user={userData}
+                    onSuccess={handleProfileUpdateSuccess}
+                    onCancel={() => setActiveTab('exhibitions')}
+                  />
+                </div>
+              )}
             </div>
-          </motion.div>
-        )}
+          )}
 
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
-          >
-            <div className="w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl relative">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-              <div className="p-6">
-                <h2 className="text-2xl font-serif font-bold mb-6">Gallery Settings</h2>
+          {activeTab === 'settings' && (
+            <div className="account-page__tab-content">
+              <div className="account-page__settings">
                 <SettingsPanel />
-                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+
+                <div className="account-page__settings-section">
+                  <h3 className="account-page__settings-subtitle">Account</h3>
                   <button
                     onClick={async () => {
                       await signOut();
                       router.push('/');
                     }}
-                    className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium"
+                    className="account-page__sign-out-button"
                   >
                     Sign Out
                   </button>
                 </div>
               </div>
             </div>
-          </motion.div>
-        )}
+          )}
+        </div>
 
         {deletingExhibition && (
           <ExhibitionDeleteModal
@@ -298,7 +819,8 @@ export default function UserAccountPage() {
             onSuccess={handleDeleteSuccess}
           />
         )}
-      </AnimatePresence>
+      </div>
     </main>
   );
 }
+

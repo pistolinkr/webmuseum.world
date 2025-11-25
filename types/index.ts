@@ -36,8 +36,6 @@ export interface Exhibition {
   genre?: string[];
   tags?: string[];
   isPublic?: boolean; // Whether the exhibition is publicly visible
-  views?: number;
-  likes?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
