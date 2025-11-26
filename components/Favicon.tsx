@@ -4,12 +4,20 @@ import { useEffect } from 'react';
 
 export default function Favicon() {
   useEffect(() => {
-    if (typeof window === 'undefined' || !document.head) return;
+    // 클라이언트 사이드에서만 실행
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !document.head) {
+      return;
+    }
 
     // 시스템 테마 감지 설정
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const updateFavicon = () => {
+      // 클라이언트 사이드 체크
+      if (typeof window === 'undefined' || typeof document === 'undefined' || !document.head) {
+        return;
+      }
+
       const isDarkMode = mediaQuery.matches;
       // 다크 모드 → 라이트 로고 (icon-white.png)
       // 라이트 모드 → 다크 로고 (icon-dark.png)
@@ -40,6 +48,10 @@ export default function Favicon() {
 
     // 시스템 테마 변경 감지 리스너 등록
     const handleChange = () => {
+      // 클라이언트 사이드에서만 실행
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return;
+      }
       setTimeout(() => updateFavicon(), 0);
     };
     
@@ -49,9 +61,11 @@ export default function Favicon() {
       mediaQuery.addListener(handleChange);
     }
 
-    // 초기 파비콘 설정 (약간의 지연을 두어 DOM이 완전히 준비된 후 실행)
+    // 초기 파비콘 설정 (클라이언트 사이드에서만 실행)
     const timeoutId = setTimeout(() => {
-      updateFavicon();
+      if (typeof window !== 'undefined' && typeof document !== 'undefined' && document.head) {
+        updateFavicon();
+      }
     }, 0);
 
     return () => {
