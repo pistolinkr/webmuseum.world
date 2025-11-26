@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: 'Web Museum',
   description: 'Digital exhibition platform',
   icons: {
-    icon: '/logo/icon-dark.png', // Default to dark icon for light theme
-    apple: '/logo/icon-dark.png',
+    icon: '/logo/dark.png', // Default to dark icon for light theme
+    apple: '/logo/dark.png',
   },
 };
 
