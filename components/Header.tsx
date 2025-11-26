@@ -72,7 +72,7 @@ export default function Header() {
     >
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
         <Image
-          src={mounted && isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
+          src={mounted && isDarkMode ? '/logo/icon-white.png' : '/logo/icon-dark.png'}
           alt="Web Museum"
           width={24}
           height={24}

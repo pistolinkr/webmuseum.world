@@ -118,7 +118,7 @@ export default function LandingHeader({ isExhibitionPage = false }: LandingHeade
       <div className={`landing-header__container${!currentUser && !loading ? ' landing-header__container--guest' : ''}${isExhibitionPage ? ' landing-header__container--exhibition' : ''}`}>
         <Link href="/" className="landing-header__logo" prefetch={true}>
           <Image
-            src={mounted && isDarkMode ? '/icon-white.png' : '/icon-dark.png'}
+            src={mounted && isDarkMode ? '/logo/icon-white.png' : '/logo/icon-dark.png'}
             alt="Web Museum"
             width={24}
             height={24}

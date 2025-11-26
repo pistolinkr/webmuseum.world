@@ -38,10 +38,10 @@ export default function Favicon() {
       const updateFavicon = () => {
       try {
         const isDarkMode = getTheme();
-        // 라이트 테마: 다크 로고 (icon-dark.png), 다크 테마: 화이트 로고 (icon-white.png)
-        // 라이트 테마 (isDarkMode = false) → icon-dark.png
-        // 다크 테마 (isDarkMode = true) → icon-white.png
-        const faviconUrl = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
+        // 라이트 테마: 화이트 로고 (white.png), 다크 테마: 다크 로고 (dark.png)
+        // 라이트 테마 (isDarkMode = false) → white.png
+        // 다크 테마 (isDarkMode = true) → dark.png
+        const faviconUrl = isDarkMode ? '/logo/dark.png' : '/logo/white.png';
         
         console.log('🔄 Favicon update:', { 
           isDarkMode, 
@@ -121,7 +121,7 @@ export default function Favicon() {
         const theme = localStorage.getItem('theme');
         // 모든 테마 설정에서 확인
         const isDarkMode = getTheme();
-        const expectedFavicon = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
+        const expectedFavicon = isDarkMode ? '/logo/dark.png' : '/logo/white.png';
         const currentFavicon = document.querySelector(`link[${DYNAMIC_ATTR}="icon"]`) as HTMLLinkElement;
         
         // 현재 파비콘이 예상과 다른지 확인

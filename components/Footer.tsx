@@ -31,7 +31,7 @@ export default function Footer() {
           <div className="footer__section">
             <Link href="/" className="footer__logo">
               <Image
-                src="/icon-white.png"
+                src="/logo/icon-white.png"
                 alt="Web Museum"
                 width={32}
                 height={32}
