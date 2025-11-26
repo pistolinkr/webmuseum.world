@@ -14,38 +14,48 @@ export default function Favicon() {
       // 다크 모드 → 라이트 로고 (icon-white.png)
       // 라이트 모드 → 다크 로고 (icon-dark.png)
       const faviconUrl = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
+      
+      // 캐시 버스터 추가로 강제 업데이트
+      const urlWithCache = `${faviconUrl}?v=${Date.now()}`;
 
-      const ensureLink = (rel: string) => {
-        let link = document.head.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = rel;
-          document.head.appendChild(link);
+      // 기존 파비콘 링크 제거
+      const existingLinks = document.head.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]');
+      existingLinks.forEach(link => link.remove());
+
+      // 새로운 파비콘 링크 생성 및 추가
+      const createLink = (rel: string) => {
+        const link = document.createElement('link');
+        link.rel = rel;
+        link.href = urlWithCache;
+        if (rel === 'icon' || rel === 'shortcut icon') {
+          link.type = 'image/png';
         }
-        return link;
+        document.head.appendChild(link);
       };
 
-      const iconLink = ensureLink('icon');
-      const shortcutLink = ensureLink('shortcut icon');
-      const appleLink = ensureLink('apple-touch-icon');
-
-      iconLink.href = faviconUrl;
-      shortcutLink.href = faviconUrl;
-      appleLink.href = faviconUrl;
+      createLink('icon');
+      createLink('shortcut icon');
+      createLink('apple-touch-icon');
     };
 
     // 시스템 테마 변경 감지 리스너 등록
-    const handleChange = () => updateFavicon();
+    const handleChange = () => {
+      setTimeout(() => updateFavicon(), 0);
+    };
+    
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange);
     } else {
       mediaQuery.addListener(handleChange);
     }
 
-    // 초기 파비콘 설정
-    updateFavicon();
+    // 초기 파비콘 설정 (약간의 지연을 두어 DOM이 완전히 준비된 후 실행)
+    const timeoutId = setTimeout(() => {
+      updateFavicon();
+    }, 0);
 
     return () => {
+      clearTimeout(timeoutId);
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener('change', handleChange);
       } else {
