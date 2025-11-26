@@ -4,114 +4,151 @@ import { useEffect } from 'react';
 
 export default function Favicon() {
   useEffect(() => {
-    // 클라이언트 사이드에서만 실행
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
-      return;
-    }
+    // 클라이언트에서만 실행
+    if (typeof window === 'undefined') return;
+    
+    const getTheme = () => {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'light') return false;
+      if (theme === 'dark') return true;
+      // System theme - check prefers-color-scheme
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
 
-    // DOM이 준비될 때까지 대기
-    if (!document.head) {
-      return;
-    }
+    const DYNAMIC_ATTR = 'data-dynamic-favicon';
 
-    let mediaQuery: MediaQueryList | null = null;
-    let timeoutId: NodeJS.Timeout | null = null;
+    const ensureLink = (rel: string, type?: string) => {
+      if (typeof document === 'undefined' || !document.head) return null;
+      const selector = `link[${DYNAMIC_ATTR}="${rel}"]`;
+      let link = document.head.querySelector(selector) as HTMLLinkElement | null;
 
-    const updateFavicon = () => {
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute(DYNAMIC_ATTR, rel);
+        link.rel = rel;
+        if (type) {
+          link.type = type;
+        }
+        document.head.appendChild(link);
+      }
+
+      return link;
+    };
+
+      const updateFavicon = () => {
       try {
-        // 클라이언트 사이드 체크
-        if (typeof window === 'undefined' || typeof document === 'undefined' || !document.head) {
+        const isDarkMode = getTheme();
+        // 라이트 테마: 다크 로고 (icon-dark.png), 다크 테마: 화이트 로고 (icon-white.png)
+        // 라이트 테마 (isDarkMode = false) → icon-dark.png
+        // 다크 테마 (isDarkMode = true) → icon-white.png
+        const faviconUrl = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
+        
+        console.log('🔄 Favicon update:', { 
+          isDarkMode, 
+          faviconUrl, 
+          theme: localStorage.getItem('theme'),
+          systemTheme: window.matchMedia('(prefers-color-scheme: dark)').matches
+        });
+
+        // 타임스탬프로 캐시 버스터 추가
+        const timestamp = Date.now();
+        const urlWithCache = `${faviconUrl}?v=${timestamp}`;
+        
+        // document.head가 존재하는지 확인
+        if (!document.head) {
+          console.warn('⚠️ document.head is not available');
           return;
         }
 
-        // 시스템 테마 확인
-        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        // 다크 모드 → 라이트 로고 (icon-white.png)
-        // 라이트 모드 → 다크 로고 (icon-dark.png)
-        const faviconUrl = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
-        
-        // 캐시 버스터 추가로 강제 업데이트
-        const urlWithCache = `${faviconUrl}?v=${Date.now()}`;
+        // 필요한 링크를 보장하고 href 업데이트
+        const iconLink = ensureLink('icon', 'image/png');
+        const shortcutLink = ensureLink('shortcut icon', 'image/png');
+        const appleLink = ensureLink('apple-touch-icon');
 
-        // 기존 파비콘 링크 제거
-        const existingLinks = document.head.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]');
-        existingLinks.forEach(link => {
-          try {
-            link.remove();
-          } catch (e) {
-            // 무시
-          }
-        });
+        if (iconLink) iconLink.href = urlWithCache;
+        if (shortcutLink) shortcutLink.href = urlWithCache;
+        if (appleLink) appleLink.href = urlWithCache;
 
-        // 새로운 파비콘 링크 생성 및 추가
-        const createLink = (rel: string) => {
-          try {
-            const link = document.createElement('link');
-            link.rel = rel;
-            link.href = urlWithCache;
-            if (rel === 'icon' || rel === 'shortcut icon') {
-              link.type = 'image/png';
-            }
-            document.head.appendChild(link);
-          } catch (e) {
-            // 무시
-          }
-        };
-
-        createLink('icon');
-        createLink('shortcut icon');
-        createLink('apple-touch-icon');
+        console.log('✅ Favicon updated to:', faviconUrl, 'for theme:', isDarkMode ? 'dark' : 'light');
       } catch (error) {
-        // 에러 발생 시 무시 (파비콘 업데이트 실패는 치명적이지 않음)
+        console.error('❌ Error updating favicon:', error);
+        }
+      };
+
+    // 초기 실행 - 약간의 지연을 두어 DOM이 완전히 로드된 후 실행
+    const initialTimeout = setTimeout(() => {
+      updateFavicon();
+    }, 100);
+
+    // 시스템 테마 변경 감지
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = () => {
+      const theme = localStorage.getItem('theme');
+      // 시스템 테마이거나 설정이 없을 때만 반응
+      if (theme === 'system' || !theme) {
+        console.log('🔄 System theme changed, updating favicon');
+        // 약간의 지연을 두어 테마가 완전히 적용된 후 업데이트
+        setTimeout(() => updateFavicon(), 100);
       }
     };
 
-    // 시스템 테마 변경 감지 리스너 등록
-    const handleChange = () => {
+    // 설정에서 테마 변경 감지
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'theme') {
+        console.log('🔄 Theme changed in storage, updating favicon');
+        setTimeout(() => updateFavicon(), 100);
+      }
+    };
+
+    // 커스텀 테마 변경 이벤트 감지
+    const handleThemeChange = () => {
+      console.log('🔄 Theme change event received, updating favicon');
+      setTimeout(() => updateFavicon(), 100);
+    };
+
+    // 이벤트 리스너 등록
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+    } else {
+      mediaQuery.addListener(handleSystemThemeChange);
+    }
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('themechange', handleThemeChange);
+
+    // 주기적으로 확인 (시스템 테마가 변경되었을 때 감지)
+    const intervalId = setInterval(() => {
       try {
-        if (typeof window !== 'undefined' && typeof document !== 'undefined' && document.head) {
+        const theme = localStorage.getItem('theme');
+        // 모든 테마 설정에서 확인
+        const isDarkMode = getTheme();
+        const expectedFavicon = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
+        const currentFavicon = document.querySelector(`link[${DYNAMIC_ATTR}="icon"]`) as HTMLLinkElement;
+        
+        // 현재 파비콘이 예상과 다른지 확인
+        if (!currentFavicon || !currentFavicon.href.includes(expectedFavicon.split('/').pop() || '')) {
+          console.log('🔄 Favicon mismatch detected, updating', {
+            current: currentFavicon?.href,
+            expected: expectedFavicon,
+            isDarkMode,
+            theme
+          });
           updateFavicon();
         }
       } catch (error) {
-        // 무시
+        console.error('❌ Error in favicon check interval:', error);
       }
-    };
-
-    try {
-      // 시스템 테마 감지 설정
-      mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      
-      if (mediaQuery) {
-        if (mediaQuery.addEventListener) {
-          mediaQuery.addEventListener('change', handleChange);
-        } else if (mediaQuery.addListener) {
-          mediaQuery.addListener(handleChange);
-        }
-      }
-
-      // 초기 파비콘 설정
-      timeoutId = setTimeout(() => {
-        updateFavicon();
-      }, 100);
-    } catch (error) {
-      // 초기 설정 실패 시 무시
-    }
+    }, 2000); // 2초마다 확인
 
     return () => {
-      try {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        if (mediaQuery) {
-          if (mediaQuery.removeEventListener) {
-            mediaQuery.removeEventListener('change', handleChange);
-          } else if (mediaQuery.removeListener) {
-            mediaQuery.removeListener(handleChange);
-          }
-        }
-      } catch (error) {
-        // 무시
+      clearTimeout(initialTimeout);
+      clearInterval(intervalId);
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleSystemThemeChange);
+      } else {
+        mediaQuery.removeListener(handleSystemThemeChange);
       }
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themechange', handleThemeChange);
     };
   }, []);
 
