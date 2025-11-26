@@ -302,8 +302,8 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 
 .landing-header__container {
   height: 100%;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -408,7 +408,6 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 .landing-header__auth-buttons {
   display: flex;
   gap: 0.75rem;
-  padding-right: 2rem;
 }
 
 .landing-header__auth-button {
@@ -1443,7 +1442,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .landing-accent__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   display: flex;
   justify-content: center;
@@ -1499,7 +1498,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .landing-features__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -1539,7 +1538,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .landing-footer__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   text-align: center;
 }
@@ -1559,7 +1558,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .footer__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -1702,7 +1701,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .exhibitions-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -1716,6 +1715,14 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 
 .exhibitions-page__header {
   margin-bottom: 2rem;
+}
+
+.exhibitions-page__header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .exhibitions-page__subtitle {
@@ -1741,6 +1748,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: border-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .exhibitions-page__search-input:focus {
@@ -1807,6 +1815,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   border-color: var(--notion-black);
 }
 
+:root[data-theme="dark"] .exhibition-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .exhibition-card:hover {
+    border-color: var(--notion-gray-100);
+  }
+}
+
 .exhibition-card__title {
   font-size: 1.5rem;
   font-weight: 600;
@@ -1858,8 +1876,33 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
     padding-top: 5rem;
   }
   
+  .exhibitions-page__header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .exhibitions-page__search-input {
+    max-width: 100%;
+  }
+  
   .exhibitions-page__grid {
     grid-template-columns: 1fr;
+  }
+  
+  .explore-page {
+    padding: 1.5rem;
+    padding-top: 5rem;
+  }
+  
+  .explore-page__header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .explore-page__search-input {
+    max-width: 100%;
   }
 }
 
@@ -2105,7 +2148,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .featured-exhibitions__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -2122,7 +2165,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   padding: 0 0 8rem;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -2150,6 +2193,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 .featured-exhibition-card:hover {
   background: var(--notion-gray-100);
   transform: translateY(-1px);
+}
+
+:root[data-theme="dark"] .featured-exhibition-card:hover {
+  background: var(--notion-gray-50);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .featured-exhibition-card:hover {
+    background: var(--notion-gray-50);
+  }
 }
 
 .featured-exhibition-card__image {
@@ -2199,7 +2252,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .featured-artists__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -2216,7 +2269,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   padding: 0 0 8rem;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto 3rem;
 }
 
@@ -2243,6 +2296,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 .artist-card:hover {
   background: var(--notion-gray-100);
   transform: translateY(-1px);
+}
+
+:root[data-theme="dark"] .artist-card:hover {
+  background: var(--notion-gray-50);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .artist-card:hover {
+    background: var(--notion-gray-50);
+  }
 }
 
 .artist-card__image {
@@ -2326,7 +2389,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .artists-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -2374,6 +2437,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 .artist-profile-card:hover {
   transform: translateY(-2px);
   border-color: var(--notion-black);
+}
+
+:root[data-theme="dark"] .artist-profile-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .artist-profile-card:hover {
+    border-color: var(--notion-gray-100);
+  }
 }
 
 .artist-profile-card__image {
@@ -2430,7 +2503,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .artist-profile-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -2526,6 +2599,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   border-color: var(--notion-black);
 }
 
+:root[data-theme="dark"] .artist-exhibition-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .artist-exhibition-card:hover {
+    border-color: var(--notion-gray-100);
+  }
+}
+
 .artist-exhibition-card__title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -2558,7 +2641,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .explore-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -2568,10 +2651,18 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   color: var(--text-secondary);
 }
 
+.explore-page__header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
 .explore-page__title {
   font-size: 2.5rem;
   font-weight: 600;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
   color: var(--notion-black);
   letter-spacing: -0.02em;
 }
@@ -2591,6 +2682,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   background: var(--notion-white);
   color: var(--notion-black);
   transition: border-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .explore-page__search-input:focus {
@@ -2651,6 +2743,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 .explore-artwork-card:hover {
   transform: translateY(-2px);
   border-color: var(--notion-black);
+}
+
+:root[data-theme="dark"] .explore-artwork-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .explore-artwork-card:hover {
+    border-color: var(--notion-gray-100);
+  }
 }
 
 .explore-artwork-card__image {
@@ -2723,6 +2825,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 .explore-artist-card:hover {
   transform: translateY(-2px);
   border-color: var(--notion-black);
+}
+
+:root[data-theme="dark"] .explore-artist-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .explore-artist-card:hover {
+    border-color: var(--notion-gray-100);
+  }
 }
 
 .explore-artist-card__image {
@@ -2809,6 +2921,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   transform: translateY(-2px);
   border-color: var(--notion-black);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="dark"] .explore-exhibition-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .explore-exhibition-card:hover {
+    border-color: var(--notion-gray-100);
+  }
 }
 
 .explore-exhibition-card__thumbnail {
@@ -2926,7 +3048,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .exhibition-overview-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -3049,6 +3171,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   border-color: var(--notion-black);
 }
 
+:root[data-theme="dark"] .exhibition-view-mode-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .exhibition-view-mode-card:hover {
+    border-color: var(--notion-gray-100);
+  }
+}
+
 .exhibition-view-mode-card__icon {
   font-size: 3rem;
   margin-bottom: 1rem;
@@ -3160,7 +3292,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .account-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   background: var(--bg-primary);
 }
@@ -4890,7 +5022,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .exhibition-manage-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -5028,7 +5160,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .user-profile-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -5138,6 +5270,16 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   transform: translateY(-2px);
   border-color: var(--notion-black);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="dark"] .user-exhibition-card:hover {
+  border-color: var(--notion-gray-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .user-exhibition-card:hover {
+    border-color: var(--notion-gray-100);
+  }
 }
 
 .user-exhibition-card__thumbnail {
@@ -5470,7 +5612,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .artwork-detail-page__container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 2rem;
 }
@@ -5489,6 +5631,20 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .artwork-detail-page__back:hover {
+  color: var(--text-primary);
+}
+
+/* Header Back to Home Button */
+.header__back-home {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.header__back-home:hover {
   color: var(--text-primary);
 }
 
@@ -5733,7 +5889,7 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
 }
 
 .legal-page__container {
-  max-width: 800px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 

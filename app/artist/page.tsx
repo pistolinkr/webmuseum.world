@@ -36,9 +36,6 @@ export default function ArtistsPage() {
     <main className="artists-page">
       <div className="artists-page__container">
         <h1 className="artists-page__title">Artists</h1>
-        <p className="artists-page__subtitle">
-          Discover artists from user-created museums
-        </p>
         {artists.length > 0 ? (
           <div className="artists-page__grid">
             {artists.map((artist) => (

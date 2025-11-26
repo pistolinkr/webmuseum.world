@@ -16,6 +16,11 @@ export default function ConditionalFooter() {
     return null;
   }
 
+  // Hide footer on exhibition pages
+  if (pathname && pathname.startsWith('/exhibition/')) {
+    return null;
+  }
+
   return <Footer />;
 }
 

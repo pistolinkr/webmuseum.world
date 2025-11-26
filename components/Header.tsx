@@ -64,6 +64,7 @@ export default function Header() {
         color: 'var(--text-primary)',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: '0.75rem',
         borderBottom: 'none',
         boxShadow: 'none',
@@ -84,6 +85,20 @@ export default function Header() {
         <h1 style={{ fontSize: '1rem', fontWeight: 400, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>
           Web Museum
         </h1>
+      </Link>
+      <Link 
+        href="/" 
+        className="header__back-home"
+        style={{ 
+          fontSize: '0.9375rem', 
+          fontWeight: 400, 
+          color: 'var(--text-secondary)', 
+          textDecoration: 'none',
+          transition: 'color 0.2s ease',
+        }}
+        prefetch={true}
+      >
+        ← Back to Home
       </Link>
     </header>
   );
