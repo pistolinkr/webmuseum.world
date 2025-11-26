@@ -6,8 +6,11 @@ export default function Favicon() {
   useEffect(() => {
     if (typeof window === 'undefined' || !document.head) return;
 
+    // 시스템 테마 감지 설정
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
     const updateFavicon = () => {
-      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDarkMode = mediaQuery.matches;
       // 다크 모드 → 라이트 로고 (icon-white.png)
       // 라이트 모드 → 다크 로고 (icon-dark.png)
       const faviconUrl = isDarkMode ? '/icon-white.png' : '/icon-dark.png';
@@ -31,18 +34,16 @@ export default function Favicon() {
       appleLink.href = faviconUrl;
     };
 
-    // 초기 설정
-    updateFavicon();
-
-    // 시스템 테마 변경 감지
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    // 시스템 테마 변경 감지 리스너 등록
     const handleChange = () => updateFavicon();
-
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange);
     } else {
       mediaQuery.addListener(handleChange);
     }
+
+    // 초기 파비콘 설정
+    updateFavicon();
 
     return () => {
       if (mediaQuery.removeEventListener) {
