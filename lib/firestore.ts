@@ -14,11 +14,12 @@ import {
   limit,
   Timestamp 
 } from 'firebase/firestore';
-import { Exhibition, Artwork, User } from '@/types';
+import { Exhibition, Artwork, User, Artist } from '@/types';
 
 const EXHIBITIONS_COLLECTION = 'exhibitions';
 const ARTWORKS_COLLECTION = 'artworks';
 const USERS_COLLECTION = 'users';
+const ARTISTS_COLLECTION = 'artists';
 
 // Helper function to check if db is available
 function ensureDb() {
@@ -718,6 +719,214 @@ export async function deletePasskey(credentialId: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Error deleting passkey:', error);
+    return false;
+  }
+}
+
+// Artist operations
+export async function getArtist(artistId: string): Promise<Artist | null> {
+  try {
+    const firestoreDb = ensureDb();
+    const docRef = doc(firestoreDb, ARTISTS_COLLECTION, artistId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log(`✅ Firebase: Loaded artist "${artistId}" from Firestore`);
+      return {
+        id: docSnap.id,
+        ...data,
+      } as Artist;
+    }
+    
+    // If artist not found in Firestore, try to extract from artworks
+    console.log(`⚠️ Firebase: Artist "${artistId}" not found in Firestore, extracting from artworks...`);
+    const allExhibitions = await getAllExhibitions();
+    for (const ex of allExhibitions) {
+      const artwork = ex.artworks.find(art => art.artistId === artistId);
+      if (artwork) {
+        // Extract artist info from artwork
+        const artist: Artist = {
+          id: artwork.artistId || artistId,
+          name: artwork.artist,
+          bio: artwork.description,
+          category: artwork.genre?.[0],
+          profileImageUrl: artwork.imageUrl,
+        };
+        console.log(`✅ Firebase: Extracted artist info from artwork`);
+        return artist;
+      }
+    }
+    
+    console.log(`⚠️ Firebase: Artist "${artistId}" not found in artworks either`);
+    return null;
+  } catch (error: any) {
+    if (isOfflineError(error)) {
+      console.warn(`⚠️ Firebase: Client is offline. Artist "${artistId}" not available.`);
+    } else {
+      console.error('❌ Firebase: Error getting artist:', error);
+    }
+    return null;
+  }
+}
+
+export async function getAllArtists(): Promise<Artist[]> {
+  try {
+    const firestoreDb = ensureDb();
+    const artistsMap = new Map<string, Artist>();
+    
+    // First, try to get artists from Firestore artists collection
+    try {
+      const querySnapshot = await getDocs(collection(firestoreDb, ARTISTS_COLLECTION));
+      querySnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        artistsMap.set(doc.id, {
+          id: doc.id,
+          ...data,
+        } as Artist);
+      });
+      console.log(`✅ Firebase: Loaded ${artistsMap.size} artists from Firestore`);
+    } catch (error: any) {
+      if (!isOfflineError(error)) {
+        console.warn(`⚠️ Firebase: Error loading artists collection:`, error);
+      }
+    }
+    
+    // Also extract artists from artworks (for backward compatibility)
+    const allExhibitions = await getAllExhibitions();
+    
+    // Process all exhibitions and artworks
+    for (const ex of allExhibitions) {
+      // Extract artists from artworks
+      ex.artworks.forEach(art => {
+        // Use artistId if available, otherwise generate a unique ID from artist name
+        const artistId = art.artistId || (art.artist ? `artist_${art.artist.toLowerCase().replace(/\s+/g, '_')}` : null);
+        if (artistId && art.artist && !artistsMap.has(artistId)) {
+          artistsMap.set(artistId, {
+            id: artistId,
+            name: art.artist,
+            bio: art.description,
+            category: art.genre?.[0],
+            profileImageUrl: art.imageUrl,
+          });
+        }
+      });
+      
+      // Also add exhibition owner/user as an artist if they created artworks
+      const ownerId = ex.ownerId || ex.userId;
+      if (ownerId && ex.artworks.length > 0) {
+        // Check if owner created any artworks in this exhibition
+        const ownerArtworks = ex.artworks.filter(art => art.userId === ownerId);
+        
+        if (ownerArtworks.length > 0 && !artistsMap.has(ownerId)) {
+          const firstArtwork = ownerArtworks[0];
+          
+          // Check if this owner is already added as an artist with a different ID
+          // (e.g., if their artworks have artistId set to their userId, or if they were added via artist name)
+          const existingArtistId = firstArtwork.artistId || 
+            (firstArtwork.artist ? `artist_${firstArtwork.artist.toLowerCase().replace(/\s+/g, '_')}` : null);
+          
+          // If owner is already added as an artist with a different ID, skip adding them again
+          if (existingArtistId && artistsMap.has(existingArtistId)) {
+            continue;
+          }
+          
+          // Also check if an artist with the same name already exists (to avoid duplicates)
+          const artistNameFromArtwork = firstArtwork.artist?.toLowerCase().trim();
+          if (artistNameFromArtwork) {
+            const existingArtist = Array.from(artistsMap.values()).find(
+              a => a.name?.toLowerCase().trim() === artistNameFromArtwork
+            );
+            if (existingArtist) {
+              // Skip adding owner as separate artist if they're already in the list
+              continue;
+            }
+          }
+          
+          // Try to get user info to use as artist name
+          try {
+            const user = await getUser(ownerId);
+            const artistName = user?.displayName || user?.name || user?.email || 'Unknown Artist';
+            
+            // Double check: if user name matches an existing artist name, skip
+            const userArtistName = artistName.toLowerCase().trim();
+            const existingArtistByName = Array.from(artistsMap.values()).find(
+              a => a.name?.toLowerCase().trim() === userArtistName
+            );
+            if (existingArtistByName) {
+              continue;
+            }
+            
+            // Use the first artwork's info for the artist
+            artistsMap.set(ownerId, {
+              id: ownerId,
+              name: artistName,
+              bio: firstArtwork.description,
+              category: firstArtwork.genre?.[0],
+              profileImageUrl: firstArtwork.imageUrl || user?.avatarUrl,
+            });
+          } catch (error) {
+            // If user fetch fails, still add artist with artwork info
+            artistsMap.set(ownerId, {
+              id: ownerId,
+              name: firstArtwork.artist || 'Unknown Artist',
+              bio: firstArtwork.description,
+              category: firstArtwork.genre?.[0],
+              profileImageUrl: firstArtwork.imageUrl,
+            });
+          }
+        }
+      }
+    }
+    
+    const artists = Array.from(artistsMap.values());
+    console.log(`✅ Firebase: Total ${artists.length} unique artists found`);
+    return artists;
+  } catch (error: any) {
+    if (isOfflineError(error)) {
+      console.warn('⚠️ Firebase: Client is offline. Artists may use cached data.');
+    } else {
+      console.error('❌ Firebase: Error getting artists:', error);
+    }
+    return [];
+  }
+}
+
+export async function createArtist(artist: Omit<Artist, 'id'>): Promise<string | null> {
+  try {
+    const firestoreDb = ensureDb();
+    const cleanedData = removeUndefinedValues(artist);
+    
+    console.log('Creating artist with data:', cleanedData);
+    
+    const docRef = await addDoc(collection(firestoreDb, ARTISTS_COLLECTION), {
+      ...cleanedData,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+    console.log('✅ Artist created successfully:', docRef.id);
+    return docRef.id;
+  } catch (error: any) {
+    console.error('❌ Error creating artist:', error);
+    throw error;
+  }
+}
+
+export async function updateArtist(artistId: string, updates: Partial<Artist>): Promise<boolean> {
+  try {
+    const firestoreDb = ensureDb();
+    const cleanedUpdates = removeUndefinedValues(updates);
+    const docRef = doc(firestoreDb, ARTISTS_COLLECTION, artistId);
+    await updateDoc(docRef, {
+      ...cleanedUpdates,
+      updatedAt: Timestamp.now(),
+    });
+    return true;
+  } catch (error: any) {
+    console.error('Error updating artist:', error);
+    if (error.message) {
+      throw error;
+    }
     return false;
   }
 }

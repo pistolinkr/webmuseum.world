@@ -148,7 +148,7 @@ export default function ExplorePage() {
     <main className="explore-page">
       <div className="explore-page__container">
         <div className="explore-page__header-top">
-          <h1 className="explore-page__title">Explore</h1>
+        <h1 className="explore-page__title">Explore</h1>
           <input
             type="text"
             placeholder="Search exhibitions, artworks, artists..."

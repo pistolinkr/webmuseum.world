@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getAllExhibitions } from '@/lib/firestore';
-import { Artist, Artwork } from '@/types';
+import { getAllArtists } from '@/lib/firestore';
+import { Artist } from '@/types';
 
 export default function ArtistsPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -11,20 +11,8 @@ export default function ArtistsPage() {
   useEffect(() => {
     async function loadArtists() {
       try {
-        const exhibitions = await getAllExhibitions();
-        // Extract unique artists from artworks
-        const uniqueArtists = new Map<string, Artist>();
-        exhibitions.forEach(ex => {
-          ex.artworks.forEach(art => {
-            if (art.artistId && !uniqueArtists.has(art.artistId)) {
-              uniqueArtists.set(art.artistId, {
-                id: art.artistId,
-                name: art.artist,
-              });
-            }
-          });
-        });
-        setArtists(Array.from(uniqueArtists.values()));
+        const artistsData = await getAllArtists();
+        setArtists(artistsData);
       } catch (error) {
         console.error('Error loading artists:', error);
       }

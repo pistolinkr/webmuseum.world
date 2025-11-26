@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getAllExhibitions } from '@/lib/firestore';
+import { getArtist, getAllExhibitions } from '@/lib/firestore';
 import { Artist } from '@/types';
 import ArtistProfileHeader from '@/components/artist/ArtistProfileHeader';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
@@ -7,27 +7,31 @@ import ArtistStoryCard from '@/components/artist/ArtistStoryCard';
 import ExhibitionGridCard from '@/components/artist/ExhibitionGridCard';
 
 export default async function ArtistProfilePage({ params }: { params: { id: string } }) {
+  // Try to get artist from Firestore first
+  let artist = await getArtist(params.id);
+  
+  // Get all exhibitions (needed for filtering artist exhibitions)
   const allExhibitions = await getAllExhibitions();
   
-  // Find artist from artworks
-  let artist: Artist | null = null;
-  for (const ex of allExhibitions) {
-    const artwork = ex.artworks.find(art => art.artistId === params.id);
-    if (artwork) {
-      artist = {
-        id: artwork.artistId || params.id,
-        name: artwork.artist,
-        bio: artwork.description, // Use artwork description as bio if artist bio not available
-        category: artwork.genre?.[0], // Use first genre as category
-        location: 'Italy (Urbino)', // This could come from artwork or artist data
-        profileImageUrl: artwork.imageUrl, // Use artwork image as profile image
-        socialLinks: {
-          website: undefined,
-          instagram: undefined,
-          twitter: undefined,
-        },
-      };
-      break;
+  // If artist not found in Firestore, try to extract from artworks (fallback)
+  if (!artist) {
+    for (const ex of allExhibitions) {
+      const artwork = ex.artworks.find(art => art.artistId === params.id);
+      if (artwork) {
+        artist = {
+          id: artwork.artistId || params.id,
+          name: artwork.artist,
+          bio: artwork.description,
+          category: artwork.genre?.[0],
+          profileImageUrl: artwork.imageUrl,
+          socialLinks: {
+            website: undefined,
+            instagram: undefined,
+            twitter: undefined,
+          },
+        };
+        break;
+      }
     }
   }
   

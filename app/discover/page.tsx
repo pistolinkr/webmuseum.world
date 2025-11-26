@@ -154,14 +154,14 @@ export default function DiscoverPage() {
         <div className="exhibitions-page__header">
           <div>
             <div className="exhibitions-page__header-top">
-              <h1 className="exhibitions-page__title">Discover</h1>
-              <input
-                type="text"
-                placeholder="Search exhibitions by title, description, curator, or artist..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="exhibitions-page__search-input"
-              />
+            <h1 className="exhibitions-page__title">Discover</h1>
+          <input
+            type="text"
+            placeholder="Search exhibitions by title, description, curator, or artist..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="exhibitions-page__search-input"
+          />
             </div>
           </div>
         </div>
