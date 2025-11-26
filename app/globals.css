@@ -5634,18 +5634,40 @@ body.hide-scrollbar::-webkit-scrollbar-thumb {
   color: var(--text-primary);
 }
 
+/* Exhibition Header */
+.exhibition-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: var(--bg-primary);
+}
+
+.exhibition-header__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 /* Header Back to Home Button */
 .header__back-home {
   display: inline-flex;
   align-items: center;
   font-size: 0.9375rem;
-  color: var(--text-secondary);
+  font-weight: 400;
+  color: var(--text-primary);
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
 }
 
 .header__back-home:hover {
-  color: var(--text-primary);
+  opacity: 0.7;
 }
 
 .artwork-detail-page__content {

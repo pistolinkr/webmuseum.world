@@ -53,24 +53,21 @@ export default function Header() {
 
   return (
     <header
+      className="exhibition-header"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
-        padding: '1rem 2rem',
         zIndex: 1000,
         backgroundColor: 'var(--bg-primary)',
         color: 'var(--text-primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem',
         borderBottom: 'none',
         boxShadow: 'none',
         margin: 0,
       }}
     >
+      <div className="exhibition-header__container">
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
         <Image
           src={mounted && isDarkMode ? '/logo/dark.png' : '/logo/white.png'}
@@ -86,20 +83,14 @@ export default function Header() {
           Web Museum
         </h1>
       </Link>
-      <Link 
-        href="/" 
-        className="header__back-home"
-        style={{ 
-          fontSize: '0.9375rem', 
-          fontWeight: 400, 
-          color: 'var(--text-secondary)', 
-          textDecoration: 'none',
-          transition: 'color 0.2s ease',
-        }}
-        prefetch={true}
-      >
-        ← Back to Home
-      </Link>
+        <Link 
+          href="/" 
+          className="header__back-home"
+          prefetch={true}
+        >
+          ← Back to Home
+        </Link>
+      </div>
     </header>
   );
 }
