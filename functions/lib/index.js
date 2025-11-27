@@ -44,13 +44,13 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || functions.config().resend?.
 const WEB_MUSEUM_BRAND = {
     name: 'Web Museum',
     supportEmail: 'support@webmuseum.world',
-    domain: 'https://webmuseumworld.vercel.app',
+    domain: 'https://webmuseum.world',
 };
 if (!RESEND_API_KEY) {
     console.warn('⚠️ Resend API key is not configured. Set functions config resend.key or environment variable.');
 }
 function generateVerificationCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*()_+-=[]{}|;:,.<>?';
     let code = '';
     for (let i = 0; i < 4; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -59,30 +59,64 @@ function generateVerificationCode() {
 }
 function createEmailTemplate(code) {
     return `
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#000000; padding: 40px 0;">
-    <tr>
-      <td align="center" style="padding: 0 24px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: #ffffff;">
-          <tr>
-            <td style="background-color:#111111; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 32px;">
-              <div style="text-align:center;">
-                <p style="font-size:20px; font-weight:600; letter-spacing:0.5px; margin:0 0 24px; color:#ffffff;">Web Museum</p>
-                <p style="font-size:24px; font-weight:600; margin:0 0 16px; color:#ffffff;">Your Verification Code</p>
-                <p style="font-size:36px; letter-spacing:4px; font-weight:700; margin:20px 0; color:#ffffff;">${code}</p>
-                <p style="font-size:14px; color:#aaaaaa; margin:0 0 24px;">
-                  This code will expire in 5 minutes.<br/>
-                  Enter it in the Web Museum window to continue.
-                </p>
-                <p style="font-size:13px; color:#777777; margin:0;">
-                  If you didn't request this, you can safely ignore this email.
-                </p>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+  <!DOCTYPE html>
+  <html style="background-color: #ffffff;">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      html {
+        background-color: #ffffff !important;
+      }
+      body {
+        background-color: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      table {
+        background-color: #ffffff !important;
+      }
+      td {
+        background-color: #ffffff !important;
+      }
+      .card {
+        background-color: #24282C !important;
+      }
+      .text-white {
+        color: #ffffff !important;
+      }
+    </style>
+  </head>
+  <body style="background-color: #ffffff !important; margin: 0; padding: 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="padding: 40px 0; background-color: #ffffff !important;">
+      <tr>
+        <td align="center" style="padding: 0 24px; background-color: #ffffff !important;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background-color: #ffffff !important;">
+            <tr>
+              <td class="card" style="background-color:#24282C !important; border-radius: 16px; padding: 32px;">
+                <div style="text-align:center;">
+                  <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 24px;">
+                    <img src="https://webmuseum.world/logo/white.png" alt="Web Museum" width="24" height="24" style="display:block; object-fit:contain;" />
+                    <p class="text-white" style="font-size:20px; font-weight:600; letter-spacing:0.5px; margin:0; color:#ffffff !important;">Web Museum</p>
+                  </div>
+                  <p class="text-white" style="font-size:24px; font-weight:600; margin:0 0 16px; color:#ffffff !important;">Your Verification Code</p>
+                  <p class="text-white" style="font-size:36px; letter-spacing:4px; font-weight:700; margin:20px 0; color:#ffffff !important;">${code}</p>
+                  <p class="text-white" style="font-size:14px; color:#ffffff !important; margin:0 0 24px; opacity:0.8;">
+                    This code will expire in 5 minutes.<br/>
+                    Enter it in the Web Museum window to continue.
+                  </p>
+                  <p class="text-white" style="font-size:13px; color:#ffffff !important; margin:0; opacity:0.6;">
+                    If you didn't request this, you can safely ignore this email.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+  </html>
   `;
 }
 exports.sendVerificationCode = functions.region(REGION).https.onCall(async (data) => {
